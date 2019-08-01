@@ -1,0 +1,8 @@
+version: "3"
+services:
+  bot:
+    image: kangaroux/etternabot
+    build:
+      context: .
+    environment:
+      - ETTERNA_API_KEY

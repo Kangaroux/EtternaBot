@@ -34,12 +34,23 @@ type MSD struct {
 	Technical  float64
 }
 
+type Song struct {
+	ID            int
+	Name          string
+	Author        string
+	Artist        string
+	BackgroundURL string
+	SongKey       string
+}
+
 type Score struct {
 	Accuracy float64
 	Date     time.Time
 	Key      string
 	Rate     float64
 	SongName string
+	SongID   int
+	Nerfed   float64
 
 	Judgements
 	MSD

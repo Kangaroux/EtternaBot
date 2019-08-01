@@ -13,10 +13,11 @@ func TestNew(t *testing.T) {
 	api := New("test")
 
 	require.Equal(t, "test", api.apiKey)
+	require.Equal(t, baseAPIURL, api.baseAPIURL)
 	require.Equal(t, baseURL, api.baseURL)
 }
 
-func TestGetUsername(t *testing.T) {
+func TestGetByUsername(t *testing.T) {
 	t.Run("should visit the correct URL", func(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			require.Equal(t, "/v1/user_data?api_key=testkey&username=jesse", r.URL.RequestURI())
@@ -25,7 +26,7 @@ func TestGetUsername(t *testing.T) {
 		defer server.Close()
 
 		api := New("testkey")
-		api.baseURL = server.URL + "/v1"
+		api.baseAPIURL = server.URL + "/v1"
 
 		api.GetByUsername("jesse")
 	})
@@ -38,7 +39,7 @@ func TestGetUsername(t *testing.T) {
 		defer server.Close()
 
 		api := New("testkey")
-		api.baseURL = server.URL + "/v1"
+		api.baseAPIURL = server.URL + "/v1"
 
 		user, err := api.GetByUsername("jesse")
 
@@ -69,7 +70,7 @@ func TestGetUsername(t *testing.T) {
 		defer server.Close()
 
 		api := New("testkey")
-		api.baseURL = server.URL + "/v1"
+		api.baseAPIURL = server.URL + "/v1"
 
 		user, err := api.GetByUsername("jesse")
 
@@ -87,5 +88,62 @@ func TestGetUsername(t *testing.T) {
 			Chordjack:   7.70,
 			Technical:   8.80,
 		}, *user)
+	})
+}
+
+func TestGetUserID(t *testing.T) {
+	t.Run("should visit the correct URL", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			require.Equal(t, "/user/jesse", r.URL.RequestURI())
+		}))
+
+		defer server.Close()
+
+		api := New("testkey")
+		api.baseURL = server.URL
+
+		api.GetUserID("jesse")
+	})
+
+	t.Run("should error when not found", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusNotFound)
+		}))
+
+		defer server.Close()
+
+		api := New("testkey")
+		api.baseURL = server.URL
+
+		_, err := api.GetUserID("jesse")
+
+		require.Error(t, err)
+		require.Equal(t, ErrNotFound, err.(*Error).Code)
+	})
+
+	t.Run("should return user ID on success", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte(`
+				<!DOCTYPE html>
+				<head></head>
+				<body>
+					<script>
+						var blah = {
+							'userid': '123'
+						};
+					</script>
+				</body>
+			`))
+		}))
+
+		defer server.Close()
+
+		api := New("testkey")
+		api.baseURL = server.URL
+
+		id, err := api.GetUserID("jesse")
+
+		require.NoError(t, err)
+		require.Equal(t, 123, id)
 	})
 }

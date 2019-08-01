@@ -7,11 +7,13 @@ type Error struct {
 }
 
 type EtternaAPI struct {
-	apiKey  string
-	baseURL string
+	apiKey     string
+	baseAPIURL string
+	baseURL    string
 }
 
 type User struct {
+	ID          int
 	Username    string
 	CountryCode string
 	AvatarURL   string

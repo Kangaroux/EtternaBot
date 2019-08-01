@@ -32,14 +32,23 @@ func main() {
 
 		for {
 			fmt.Println("Getting...")
-			u, err := api.GetUsername("jesse")
+			u, err := api.GetByUsername("jesse")
 
 			if err != nil {
 				fmt.Println(err)
 				os.Exit(1)
-			} else {
-				fmt.Printf("%+v\n", u)
 			}
+
+			id, err := api.GetUserID(u.Username)
+
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+
+			u.ID = id
+
+			fmt.Printf("%+v\n", u)
 
 			<-time.After(30 * time.Second)
 		}

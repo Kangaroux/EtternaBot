@@ -48,9 +48,8 @@ type Score struct {
 	Date     time.Time
 	Key      string
 	Rate     float64
-	SongName string
-	SongID   int
 	Nerfed   float64
+	Song     Song
 
 	Judgements
 	MSD

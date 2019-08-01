@@ -242,8 +242,8 @@ func TestGetScores(t *testing.T) {
 
 		// Testing 1 of the 5 because I'm too lazy to do this for two scores
 		require.Equal(t, "S03d9aef6758d50f60dedc2fc6b855dd22aa6b1e2", scores[0].Key)
-		require.Equal(t, "ETERNAL DRAIN", scores[0].SongName)
-		require.Equal(t, 2254, scores[0].SongID)
+		require.Equal(t, "ETERNAL DRAIN", scores[0].Song.Name)
+		require.Equal(t, 2254, scores[0].Song.ID)
 		require.Equal(t, "2019-07-31", scores[0].Date.Format("2006-01-02"))
 		require.Equal(t, 89.89, scores[0].Accuracy)
 		require.Equal(t, 0.80, scores[0].Rate)

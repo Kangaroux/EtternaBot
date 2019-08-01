@@ -323,9 +323,9 @@ func parseSongNameAndID(s string, score *Score) error {
 	}
 
 	node := htmlquery.FindOne(doc, "//a")
-	score.SongName = htmlquery.InnerText(node)
+	score.Song.Name = htmlquery.InnerText(node)
 	urlParts := strings.Split(htmlquery.SelectAttr(node, "href"), "/")
-	score.SongID, _ = strconv.Atoi(urlParts[len(urlParts) - 1])
+	score.Song.ID, _ = strconv.Atoi(urlParts[len(urlParts) - 1])
 
 	return nil
 }

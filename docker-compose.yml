@@ -6,3 +6,17 @@ services:
       context: .
     environment:
       - ETTERNA_API_KEY
+    depends_on:
+      - db
+  db:
+    image: postgres:11
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-root}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - POSTGRES_DB=${POSTGRES_DB:-etternabot}
+    ports:
+      - "5432:5432"
+    volumes:
+      - "dbdata:/var/lib/postgresql"
+volumes:
+  dbdata:

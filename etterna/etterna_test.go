@@ -79,14 +79,16 @@ func TestGetByUsername(t *testing.T) {
 			Username:    "jesse",
 			CountryCode: "US",
 			AvatarURL:   "avatar.jpg",
-			Overall:     1.10,
-			Stream:      2.20,
-			Jumpstream:  3.30,
-			Handstream:  4.40,
-			Stamina:     5.50,
-			JackSpeed:   6.60,
-			Chordjack:   7.70,
-			Technical:   8.80,
+			MSD: MSD{
+				Overall:    1.10,
+				Stream:     2.20,
+				Jumpstream: 3.30,
+				Handstream: 4.40,
+				Stamina:    5.50,
+				JackSpeed:  6.60,
+				Chordjack:  7.70,
+				Technical:  8.80,
+			},
 		}, *user)
 	})
 }

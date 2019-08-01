@@ -23,6 +23,7 @@ var (
 type EtternaAPIInterface interface {
 	GetByUsername(username string) (*User, error)
 	GetUserID(username string) (int, error)
+	GetScores(userID int, n int, sortColumn, sortAsc bool)
 }
 
 // New returns a ready-to-use instance of the etterna API

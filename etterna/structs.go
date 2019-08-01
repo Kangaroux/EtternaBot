@@ -1,5 +1,7 @@
 package etterna
 
+import "time"
+
 type Error struct {
 	Code    int
 	Context error
@@ -12,12 +14,16 @@ type EtternaAPI struct {
 	baseURL    string
 }
 
-type User struct {
-	ID          int
-	Username    string
-	CountryCode string
-	AvatarURL   string
+type Judgements struct {
+	Marvelous int
+	Perfect   int
+	Great     int
+	Good      int
+	Bad       int
+	Miss      int
+}
 
+type MSD struct {
 	Overall    float64
 	Stream     float64
 	Jumpstream float64
@@ -26,4 +32,24 @@ type User struct {
 	JackSpeed  float64
 	Chordjack  float64
 	Technical  float64
+}
+
+type Score struct {
+	Accuracy float64
+	Date     time.Time
+	Key      string
+	Rate     float64
+	SongName string
+
+	Judgements
+	MSD
+}
+
+type User struct {
+	ID          int
+	AvatarURL   string
+	CountryCode string
+	Username    string
+
+	MSD
 }

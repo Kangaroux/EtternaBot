@@ -40,7 +40,7 @@ type Song struct {
 	Author        string
 	Artist        string
 	BackgroundURL string
-	SongKey       string
+	Key           string
 }
 
 type Score struct {
@@ -49,6 +49,9 @@ type Score struct {
 	Key      string
 	Rate     float64
 	Nerfed   float64
+	MaxCombo int
+	Mods     string
+	Valid    bool
 	Song     Song
 
 	Judgements

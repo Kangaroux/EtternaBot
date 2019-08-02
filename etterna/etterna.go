@@ -39,17 +39,17 @@ const (
 )
 
 var (
-	reUserID = regexp.MustCompile(`'userid': '(\d+)'`)
+	reUserID    = regexp.MustCompile(`'userid': '(\d+)'`)
 	reJudgement = regexp.MustCompile(`([a-zA-Z]+):\s+(\d+)`)
 )
 
 // Payload received from the userScores endpoint
 type scorePayload struct {
-	SongName string
-	Rate     string `json:"user_chart_rate_rate"`
-	Nerf     float64
-	ScoreKey string
-	Date     string `json:"datetime"`
+	SongName  string
+	Rate      string `json:"user_chart_rate_rate"`
+	Nerf      float64
+	ScoreKey  string
+	Date      string `json:"datetime"`
 	WifeScore string
 
 	Overall    string
@@ -278,6 +278,120 @@ func (api *EtternaAPI) GetScores(userID int, n uint, start uint, sortColumn Sort
 	return scores, nil
 }
 
+// GetScoreDetail looks up additional details for a given score.
+func (api *EtternaAPI) GetScoreDetail(score *Score) error {
+	var payload []struct {
+		Modifiers string
+		Datetime  string
+		Valid     string
+		MaxCombo  string
+	}
+
+	reqURL := fmt.Sprintf(api.baseAPIURL+"/score?api_key=%s&key=%s", api.apiKey, score.Key[:41])
+	resp, err := http.PostForm(reqURL, url.Values{})
+
+	if err != nil {
+		return &Error{
+			Code:    ErrUnexpected,
+			Context: err,
+			Msg:     "Unexpected error trying to retreive score details",
+		}
+	}
+
+	if resp.StatusCode == http.StatusNotFound {
+		return &Error{
+			Code:    ErrNotFound,
+			Context: err,
+			Msg:     "Score does not exist.",
+		}
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+
+	if err != nil {
+		return &Error{
+			Code:    ErrUnexpected,
+			Context: err,
+			Msg:     "Unexpected error trying to retreive score details",
+		}
+	}
+
+	if err := json.Unmarshal(body, &payload); err != nil {
+		return &Error{
+			Code:    ErrUnexpected,
+			Context: err,
+			Msg:     "Unexpected error trying to retreive score details",
+		}
+	}
+
+	score.MaxCombo, _ = strconv.Atoi(payload[0].MaxCombo)
+	score.Valid = payload[0].Valid == "1"
+	score.Date, _ = time.Parse("2006-01-02 15:04:05", payload[0].Datetime)
+	score.Mods = payload[0].Modifiers
+
+	return nil
+}
+
+func (api *EtternaAPI) GetSong(id int) (*Song, error) {
+	var payload []struct {
+		SongKey    string
+		ID         string
+		SongName   string
+		Author     string
+		Artist     string
+		Background string
+	}
+
+	reqURL := fmt.Sprintf(api.baseAPIURL+"/song?api_key=%s&key=%d", api.apiKey, id)
+	resp, err := http.PostForm(reqURL, url.Values{})
+
+	if err != nil {
+		return nil, &Error{
+			Code:    ErrUnexpected,
+			Context: err,
+			Msg:     "Unexpected error trying to retreive song details",
+		}
+	}
+
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, &Error{
+			Code:    ErrNotFound,
+			Context: err,
+			Msg:     "Song does not exist.",
+		}
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+
+	if err != nil {
+		return nil, &Error{
+			Code:    ErrUnexpected,
+			Context: err,
+			Msg:     "Unexpected error trying to retreive song details",
+		}
+	}
+
+	if err := json.Unmarshal(body, &payload); err != nil {
+		return nil, &Error{
+			Code:    ErrUnexpected,
+			Context: err,
+			Msg:     "Unexpected error trying to retreive song details",
+		}
+	}
+
+	song := Song{
+		Name:          payload[0].SongName,
+		Author:        payload[0].Author,
+		Artist:        payload[0].Artist,
+		BackgroundURL: payload[0].Background,
+		Key:           payload[0].SongKey,
+	}
+
+	song.ID, _ = strconv.Atoi(payload[0].ID)
+
+	return &song, nil
+}
+
 func parseScorePayload(payload scorePayload) (*Score, error) {
 	score := Score{}
 
@@ -325,7 +439,7 @@ func parseSongNameAndID(s string, score *Score) error {
 	node := htmlquery.FindOne(doc, "//a")
 	score.Song.Name = htmlquery.InnerText(node)
 	urlParts := strings.Split(htmlquery.SelectAttr(node, "href"), "/")
-	score.Song.ID, _ = strconv.Atoi(urlParts[len(urlParts) - 1])
+	score.Song.ID, _ = strconv.Atoi(urlParts[len(urlParts)-1])
 
 	return nil
 }

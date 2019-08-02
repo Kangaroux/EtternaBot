@@ -57,7 +57,7 @@ func (s DiscordServerService) Save(server *model.DiscordServer) error {
 			server.ScoreChannelID,
 		)
 	} else {
-		q := `UPDATE "etterna_users" SET
+		q := `UPDATE "discord_servers" SET
 			updated_at=$2,
 			command_prefix=$3,
 			score_channel_id=$4

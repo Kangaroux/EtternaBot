@@ -14,7 +14,7 @@ import (
 
 const (
 	defaultPrefix      = ";"
-	recentPlayInterval = 2 * time.Minute
+	recentPlayInterval = 1 * time.Minute
 )
 
 type Bot struct {
@@ -40,6 +40,7 @@ func New(s *discordgo.Session, db *sqlx.DB, etternaAPIKey string) Bot {
 	// Check for recent plays periodically
 	go func() {
 		for {
+			fmt.Println("Tracking recent plays...")
 			bot.trackRecentPlays()
 			<-time.After(recentPlayInterval)
 		}
@@ -75,8 +76,6 @@ func (bot *Bot) messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) 
 	if m.Author.ID == s.State.User.ID {
 		return
 	}
-
-	defer recover()
 
 	server, err := bot.servers.Get(m.GuildID)
 
@@ -115,6 +114,7 @@ func (bot *Bot) messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) 
 
 func (bot *Bot) setScoresChannel(server *model.DiscordServer, m *discordgo.MessageCreate) {
 	server.ScoreChannelID.String = m.ChannelID
+	server.ScoreChannelID.Valid = true
 
 	if err := bot.servers.Save(server); err != nil {
 		bot.s.ChannelMessageSend(m.ChannelID, err.Error())
@@ -255,7 +255,7 @@ func (bot *Bot) trackRecentPlays() {
 	}
 
 	type RegisteredUserServers struct {
-		User    *model.EtternaUser
+		User    model.EtternaUser
 		Servers []model.DiscordServer
 	}
 
@@ -297,19 +297,16 @@ func (bot *Bot) trackRecentPlays() {
 		return
 	}
 
-	userMap := make(map[uint]*RegisteredUserServers)
+	userMap := make(map[string]*RegisteredUserServers)
 
 	for _, r := range results {
-		if _, exists := userMap[r.EtternaUser.ID]; !exists {
-			val := &RegisteredUserServers{
-				User: &r.EtternaUser,
+		if _, exists := userMap[r.Username]; !exists {
+			userMap[r.Username] = &RegisteredUserServers{
+				User:    r.EtternaUser,
+				Servers: []model.DiscordServer{r.DiscordServer},
 			}
-
-			val.Servers = append(val.Servers, r.DiscordServer)
-			userMap[r.EtternaUser.ID] = val
 		} else {
-			val := userMap[r.EtternaUser.ID]
-			val.Servers = append(val.Servers, r.DiscordServer)
+			userMap[r.Username].Servers = append(userMap[r.Username].Servers, r.DiscordServer)
 		}
 	}
 
@@ -325,6 +322,7 @@ func (bot *Bot) trackRecentPlays() {
 
 		// We've already seen this score
 		if v.User.LastRecentScoreKey.Valid && s.Key == v.User.LastRecentScoreKey.String {
+			fmt.Println("No new scores", s.Key)
 			continue
 		}
 
@@ -362,10 +360,11 @@ func (bot *Bot) trackRecentPlays() {
 		v.User.LastRecentScoreKey.String = s.Key
 		v.User.LastRecentScoreKey.Valid = true
 
-		bot.users.Save(v.User)
+		bot.users.Save(&v.User)
 
 		// If the score is invalid don't post it
 		if !s.Valid {
+			fmt.Println("Score isn't valid")
 			continue
 		}
 

@@ -1,0 +1,13 @@
+BEGIN;
+
+ALTER TABLE etterna_users
+ALTER COLUMN msd_overall    TYPE DECIMAL,
+ALTER COLUMN msd_stream     TYPE DECIMAL,
+ALTER COLUMN msd_jumpstream TYPE DECIMAL,
+ALTER COLUMN msd_handstream TYPE DECIMAL,
+ALTER COLUMN msd_stamina    TYPE DECIMAL,
+ALTER COLUMN msd_jackspeed  TYPE DECIMAL,
+ALTER COLUMN msd_chordjack  TYPE DECIMAL,
+ALTER COLUMN msd_technical  TYPE DECIMAL;
+
+COMMIT;

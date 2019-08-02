@@ -17,7 +17,22 @@ func NewUserService(db *sqlx.DB) UserService {
 	return UserService{db: db}
 }
 
-func (s UserService) Get(username string) (*model.User, error) {
+func (s UserService) GetDiscordID(id string) (*model.User, error) {
+	user := &model.User{}
+
+	if err := s.db.Get(user, `SELECT * FROM "users" WHERE discord_id=$1`, id); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+
+		// log.Log.Errorf("Failed to lookup user discord_id=%v err=%v", id, err)
+		return nil, err
+	}
+
+	return user, nil
+}
+
+func (s UserService) GetUsername(username string) (*model.User, error) {
 	user := &model.User{}
 
 	if err := s.db.Get(user, `SELECT * FROM "users" WHERE username=$1`, username); err != nil {
@@ -44,7 +59,7 @@ func (s UserService) Save(user *model.User) error {
 			created_at,
 			updated_at,
 			username,
-			discord_id
+			discord_id,
 			etterna_id,
 			avatar,
 			msd_overall,
@@ -90,7 +105,7 @@ func (s UserService) Save(user *model.User) error {
 			msd_technical=$12
 		WHERE username=$1`
 
-		_, err = s.db.Exec(q, user.CreatedAt,
+		_, err = s.db.Exec(q,
 			user.Username,
 			user.UpdatedAt,
 			user.Avatar,

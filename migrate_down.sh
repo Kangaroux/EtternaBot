@@ -1,16 +1,16 @@
 #!/bin/sh
-# Applies the latest database migrations. Must be ran from within a container.
+# Reverts the last applied migration on the database.
 
-echo "Applying migrations..."
+echo "Reverting latest migration..."
 
 for i in 1 2 3 4 5; do
     ./bin/migrate \
         -path migrations/ \
         -database postgres://$POSTGRES_USER:$POSTGRES_PASSWORD@$DATABASE_HOST/$POSTGRES_DB?sslmode=disable \
-        up
+        down 1
 
     if [ $? -eq 0 ]; then
-        echo "Migrations applied successfully."
+        echo "Migration reverted successfully."
         exit 0
     fi
 
@@ -19,5 +19,5 @@ for i in 1 2 3 4 5; do
     sleep 1
 done
 
-echo "Migrations could not be applied."
+echo "Migration could not be reverted."
 exit 1

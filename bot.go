@@ -19,7 +19,7 @@ type Bot struct {
 	db    *sqlx.DB
 	ett   etterna.EtternaAPI
 	s     *discordgo.Session
-	users service.UserService
+	users service.EtternaUserService
 }
 
 func New(s *discordgo.Session, db *sqlx.DB, etternaAPIKey string) Bot {
@@ -114,7 +114,7 @@ func (bot *Bot) setUser(m *discordgo.MessageCreate, args []string) {
 			return
 		}
 
-		user = &model.User{
+		user = &model.EtternaUser{
 			Username:      username,
 			EtternaID:     id,
 			Avatar:        ettUser.AvatarURL,
@@ -130,18 +130,18 @@ func (bot *Bot) setUser(m *discordgo.MessageCreate, args []string) {
 	}
 
 	// This user is already associated with a discord user
-	if user.DiscordID.Valid {
-		if user.DiscordID.String == m.Author.ID {
+	// if user.DiscordID.Valid {
+	// 	if user.DiscordID.String == m.Author.ID {
 
-		}
+	// 	}
 
-		bot.s.ChannelMessageSend(m.ChannelID,
-			fmt.Sprintf("Another user is already registered as '%s'.", username))
-		return
-	}
+	// 	bot.s.ChannelMessageSend(m.ChannelID,
+	// 		fmt.Sprintf("Another user is already registered as '%s'.", username))
+	// 	return
+	// }
 
-	user.DiscordID.String = m.Author.ID
-	user.DiscordID.Valid = true
+	// user.DiscordID.String = m.Author.ID
+	// user.DiscordID.Valid = true
 
 	if err := bot.users.Save(user); err != nil {
 		bot.s.ChannelMessageSend(m.ChannelID, err.Error())
@@ -165,7 +165,7 @@ func (bot *Bot) unregisterUser(m *discordgo.MessageCreate) {
 		return
 	}
 
-	user.DiscordID.Valid = false
+	// user.DiscordID.Valid = false
 
 	if err := bot.users.Save(user); err != nil {
 		bot.s.ChannelMessageSend(m.ChannelID, err.Error())

@@ -1,6 +1,6 @@
 BEGIN;
 
 ALTER TABLE users
-DROP COLUMN discord_id;
+DROP COLUMN IF EXISTS discord_id;
 
 COMMIT;

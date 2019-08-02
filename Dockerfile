@@ -14,6 +14,7 @@ RUN apk update && apk add ca-certificates && rm -rf /var/cache/apk/*
 WORKDIR /app
 COPY --from=0 /app/build/app .
 COPY --from=0 /app/src/migrate.sh .
+COPY --from=0 /app/src/migrate_down.sh .
 COPY --from=0 /app/src/bin ./bin
 COPY --from=0 /app/src/migrations ./migrations
 CMD ./migrate.sh && /app/app --etterna-key $ETTERNA_API_KEY --token $BOT_TOKEN

@@ -1,9 +1,6 @@
 BEGIN;
 
-ALTER TABLE users
-DROP CONSTRAINT unique_username,
-DROP CONSTRAINT unique_etterna_id;
-
-DROP INDEX users_username, users_etterna_id;
+DROP INDEX IF EXISTS users_username CASCADE;
+DROP INDEX IF EXISTS users_etterna_id CASCADE;
 
 COMMIT;

@@ -8,17 +8,17 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-type UserService struct {
+type EtternaUserService struct {
 	db *sqlx.DB
 }
 
 // NewUserService returns a service for managing users in the database
-func NewUserService(db *sqlx.DB) UserService {
-	return UserService{db: db}
+func NewUserService(db *sqlx.DB) EtternaUserService {
+	return EtternaUserService{db: db}
 }
 
-func (s UserService) GetDiscordID(id string) (*model.User, error) {
-	user := &model.User{}
+func (s EtternaUserService) GetDiscordID(id string) (*model.EtternaUser, error) {
+	user := &model.EtternaUser{}
 
 	if err := s.db.Get(user, `SELECT * FROM "users" WHERE discord_id=$1`, id); err != nil {
 		if err == sql.ErrNoRows {
@@ -32,8 +32,8 @@ func (s UserService) GetDiscordID(id string) (*model.User, error) {
 	return user, nil
 }
 
-func (s UserService) GetUsername(username string) (*model.User, error) {
-	user := &model.User{}
+func (s EtternaUserService) GetUsername(username string) (*model.EtternaUser, error) {
+	user := &model.EtternaUser{}
 
 	if err := s.db.Get(user, `SELECT * FROM "users" WHERE username=$1`, username); err != nil {
 		if err == sql.ErrNoRows {
@@ -47,7 +47,7 @@ func (s UserService) GetUsername(username string) (*model.User, error) {
 	return user, nil
 }
 
-func (s UserService) Save(user *model.User) error {
+func (s EtternaUserService) Save(user *model.EtternaUser) error {
 	var err error
 
 	now := time.Now().UTC()
@@ -59,7 +59,6 @@ func (s UserService) Save(user *model.User) error {
 			created_at,
 			updated_at,
 			username,
-			discord_id,
 			etterna_id,
 			avatar,
 			msd_overall,
@@ -71,14 +70,13 @@ func (s UserService) Save(user *model.User) error {
 			msd_chordjack,
 			msd_technical
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 		RETURNING id`
 
 		err = s.db.Get(&user.ID, q,
 			user.CreatedAt,
 			user.UpdatedAt,
 			user.Username,
-			user.DiscordID,
 			user.EtternaID,
 			user.Avatar,
 			user.MSDOverall,
@@ -94,22 +92,20 @@ func (s UserService) Save(user *model.User) error {
 		q := `UPDATE "users" SET
 			updated_at=$2,
 			avatar=$3,
-			discord_id=$4,
-			msd_overall=$5,
-			msd_stream=$6,
-			msd_jumpstream=$7,
-			msd_handstream=$8,
-			msd_stamina=$9,
-			msd_jackspeed=$10,
-			msd_chordjack=$11,
-			msd_technical=$12
+			msd_overall=$4,
+			msd_stream=$5,
+			msd_jumpstream=$6,
+			msd_handstream=$7,
+			msd_stamina=$8,
+			msd_jackspeed=$9,
+			msd_chordjack=$10,
+			msd_technical=$11
 		WHERE username=$1`
 
 		_, err = s.db.Exec(q,
 			user.Username,
 			user.UpdatedAt,
 			user.Avatar,
-			user.DiscordID,
 			user.MSDOverall,
 			user.MSDStream,
 			user.MSDJumpstream,

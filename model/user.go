@@ -1,7 +1,5 @@
 package model
 
-import "github.com/Kangaroux/etternabot/etterna"
-
 type UserServicer interface {
 	Get(username string) (*User, error)
 	Save(user *User) error
@@ -9,8 +7,15 @@ type UserServicer interface {
 
 type User struct {
 	BaseModel
-	Username string
-	EtternaID int
-	Avatar   string
-	MSD      etterna.MSD
+	Username      string  `db:"username"`
+	EtternaID     int     `db:"etterna_id"`
+	Avatar        string  `db:"avatar"`
+	MSDOverall    float64 `db:"msd_overall"`
+	MSDStream     float64 `db:"msd_stream"`
+	MSDJumpstream float64 `db:"msd_jumpstream"`
+	MSDHandstream float64 `db:"msd_handstream"`
+	MSDStamina    float64 `db:"msd_stamina"`
+	MSDJackSpeed  float64 `db:"msd_jackspeed"`
+	MSDChordjack  float64 `db:"msd_chordjack"`
+	MSDTechnical  float64 `db:"msd_technical"`
 }

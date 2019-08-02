@@ -44,6 +44,7 @@ func (s UserService) Save(user *model.User) error {
 			created_at,
 			updated_at,
 			username,
+			discord_id
 			etterna_id,
 			avatar,
 			msd_overall,
@@ -55,13 +56,14 @@ func (s UserService) Save(user *model.User) error {
 			msd_chordjack,
 			msd_technical
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 		RETURNING id`
 
 		err = s.db.Get(&user.ID, q,
 			user.CreatedAt,
 			user.UpdatedAt,
 			user.Username,
+			user.DiscordID,
 			user.EtternaID,
 			user.Avatar,
 			user.MSDOverall,
@@ -77,21 +79,22 @@ func (s UserService) Save(user *model.User) error {
 		q := `UPDATE "users" SET
 			updated_at=$2,
 			avatar=$3,
-			msd_overall=$4,
-			msd_stream=$5,
-			msd_jumpstream=$6,
-			msd_handstream=$7,
-			msd_stamina=$8,
-			msd_jackspeed=$9,
-			msd_chordjack=$10,
-			msd_technical=$11
+			discord_id=$4,
+			msd_overall=$5,
+			msd_stream=$6,
+			msd_jumpstream=$7,
+			msd_handstream=$8,
+			msd_stamina=$9,
+			msd_jackspeed=$10,
+			msd_chordjack=$11,
+			msd_technical=$12
 		WHERE username=$1`
 
 		_, err = s.db.Exec(q, user.CreatedAt,
 			user.Username,
 			user.UpdatedAt,
-			user.EtternaID,
 			user.Avatar,
+			user.DiscordID,
 			user.MSDOverall,
 			user.MSDStream,
 			user.MSDJumpstream,

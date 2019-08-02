@@ -8,6 +8,7 @@ type UserServicer interface {
 type User struct {
 	BaseModel
 	Username      string  `db:"username"`
+	DiscordID     string  `db:"discord_id"`
 	EtternaID     int     `db:"etterna_id"`
 	Avatar        string  `db:"avatar"`
 	MSDOverall    float64 `db:"msd_overall"`

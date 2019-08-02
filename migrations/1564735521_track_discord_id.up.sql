@@ -1,0 +1,6 @@
+BEGIN;
+
+ALTER TABLE users
+ADD COLUMN discord_id VARCHAR(20) UNIQUE;
+
+COMMIT;

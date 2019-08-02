@@ -2,6 +2,11 @@ package model
 
 import "database/sql"
 
+type DiscordServerServicer interface {
+	Get(serverID string) (*DiscordServer, error)
+	Save(server *DiscordServer) error
+}
+
 type DiscordServer struct {
 	BaseModel
 	CommandPrefix  string         `db:"command_prefix"` // Prefix for using bot commands

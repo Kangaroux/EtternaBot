@@ -14,10 +14,10 @@ type EtternaUserServicer interface {
 	Save(user *EtternaUser) error
 
 	// Registers a discord user with an etterna user for a particular discord server
-	Register(username, serverID, discordID string) error
+	Register(username, serverID, discordID string) (bool, error)
 
 	// Unregisters the discord user from any etterna users for a particular discord server
-	Unregister(serverID, discordID string) error
+	Unregister(serverID, discordID string) (bool, error)
 }
 
 type EtternaUser struct {

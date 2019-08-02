@@ -12,27 +12,57 @@ import (
 )
 
 const (
-	cmdPrefix = ";"
+	defaultPrefix = ";"
 )
 
 type Bot struct {
-	db    *sqlx.DB
-	ett   etterna.EtternaAPI
-	s     *discordgo.Session
-	users service.EtternaUserService
+	db        *sqlx.DB
+	ett       etterna.EtternaAPI
+	s         *discordgo.Session
+	serverMap map[string]*model.DiscordServer
+	servers   model.DiscordServerServicer
+	users     model.EtternaUserServicer
 }
 
 func New(s *discordgo.Session, db *sqlx.DB, etternaAPIKey string) Bot {
 	bot := Bot{
-		db:    db,
-		ett:   etterna.New(etternaAPIKey),
-		s:     s,
-		users: service.NewUserService(db),
+		db:        db,
+		ett:       etterna.New(etternaAPIKey),
+		s:         s,
+		serverMap: make(map[string]*model.DiscordServer),
+		servers:   service.NewDiscordServerService(db),
+		users:     service.NewUserService(db),
 	}
 
+	s.AddHandler(bot.guildCreate)
 	s.AddHandler(bot.messageCreate)
 
 	return bot
+}
+
+func (bot *Bot) guildCreate(s *discordgo.Session, g *discordgo.GuildCreate) {
+	server, err := bot.servers.Get(g.ID)
+
+	if err != nil {
+		fmt.Println("ERROR: Failed to load guild info", g.ID, g.Name)
+		return
+	}
+
+	if server == nil {
+		server = &model.DiscordServer{
+			CommandPrefix: defaultPrefix,
+			ServerID:      g.ID,
+		}
+
+		if err := bot.servers.Save(server); err != nil {
+			fmt.Println("ERROR: Failed to insert guild into db", g.ID, g.Name, err)
+			return
+		} else {
+			fmt.Println("Created record for server", g.Name)
+		}
+	}
+
+	bot.serverMap[g.ID] = server
 }
 
 func (bot *Bot) messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
@@ -40,11 +70,13 @@ func (bot *Bot) messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) 
 		return
 	}
 
-	if !strings.HasPrefix(m.Message.Content, cmdPrefix) {
+	server := bot.serverMap[m.GuildID]
+
+	if !strings.HasPrefix(m.Message.Content, server.CommandPrefix) {
 		return
 	}
 
-	cmdParts := strings.SplitN(m.Message.Content[len(cmdPrefix):], " ", 2)
+	cmdParts := strings.SplitN(m.Message.Content[len(server.CommandPrefix):], " ", 2)
 
 	if cmdParts[0] == "" {
 		return

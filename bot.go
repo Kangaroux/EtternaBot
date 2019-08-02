@@ -76,6 +76,8 @@ func (bot *Bot) messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) 
 		return
 	}
 
+	defer recover()
+
 	server, err := bot.servers.Get(m.GuildID)
 
 	if err != nil {

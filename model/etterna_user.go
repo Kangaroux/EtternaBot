@@ -1,5 +1,7 @@
 package model
 
+import "database/sql"
+
 type EtternaUserServicer interface {
 	// Gets the id of the discord user associated with the given etterna user in a given server
 	GetRegisteredDiscordUserID(serverID, username string) (string, error)
@@ -22,15 +24,16 @@ type EtternaUserServicer interface {
 
 type EtternaUser struct {
 	BaseModel
-	Username      string  `db:"username"`
-	EtternaID     int     `db:"etterna_id"`
-	Avatar        string  `db:"avatar"`
-	MSDOverall    float64 `db:"msd_overall"`
-	MSDStream     float64 `db:"msd_stream"`
-	MSDJumpstream float64 `db:"msd_jumpstream"`
-	MSDHandstream float64 `db:"msd_handstream"`
-	MSDStamina    float64 `db:"msd_stamina"`
-	MSDJackSpeed  float64 `db:"msd_jackspeed"`
-	MSDChordjack  float64 `db:"msd_chordjack"`
-	MSDTechnical  float64 `db:"msd_technical"`
+	Username           string         `db:"username"`
+	EtternaID          int            `db:"etterna_id"`
+	Avatar             string         `db:"avatar"`
+	LastRecentScoreKey sql.NullString `db:"last_recent_score_key"`
+	MSDOverall         float64        `db:"msd_overall"`
+	MSDStream          float64        `db:"msd_stream"`
+	MSDJumpstream      float64        `db:"msd_jumpstream"`
+	MSDHandstream      float64        `db:"msd_handstream"`
+	MSDStamina         float64        `db:"msd_stamina"`
+	MSDJackSpeed       float64        `db:"msd_jackspeed"`
+	MSDChordjack       float64        `db:"msd_chordjack"`
+	MSDTechnical       float64        `db:"msd_technical"`
 }

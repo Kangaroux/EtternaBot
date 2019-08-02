@@ -13,7 +13,8 @@ import (
 )
 
 const (
-	defaultPrefix = ";"
+	defaultPrefix      = ";"
+	recentPlayInterval = 2 * time.Minute
 )
 
 type Bot struct {
@@ -35,6 +36,14 @@ func New(s *discordgo.Session, db *sqlx.DB, etternaAPIKey string) Bot {
 
 	s.AddHandler(bot.guildCreate)
 	s.AddHandler(bot.messageCreate)
+
+	// Check for recent plays periodically
+	go func() {
+		for {
+			bot.trackRecentPlays()
+			<-time.After(recentPlayInterval)
+		}
+	}()
 
 	return bot
 }
@@ -93,8 +102,8 @@ func (bot *Bot) messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) 
 		bot.setUser(m, cmdParts)
 	case "unregister":
 		bot.unregisterUser(m)
-	case "track":
-		bot.trackRecentPlays()
+	// case "track":
+	// 	bot.trackRecentPlays()
 	case "here":
 		bot.setScoresChannel(server, m)
 	default:
@@ -252,26 +261,27 @@ func (bot *Bot) trackRecentPlays() {
 
 	query := `
 		SELECT
-			u.id               "u.id",
-			u.created_at       "u.created_at",
-			u.updated_at       "u.updated_at",
-			u.etterna_id       "u.etterna_id",
-			u.avatar           "u.avatar",
-			u.username         "u.username",
-			u.msd_overall      "u.msd_overall",
-			u.msd_stream       "u.msd_stream",
-			u.msd_jumpstream   "u.msd_jumpstream",
-			u.msd_handstream   "u.msd_handstream",
-			u.msd_stamina      "u.msd_stamina",
-			u.msd_jackspeed    "u.msd_jackspeed",
-			u.msd_chordjack    "u.msd_chordjack",
-			u.msd_technical    "u.msd_technical",
-			s.id               "s.id",
-			s.created_at       "s.created_at",
-			s.updated_at       "s.updated_at",
-			s.command_prefix   "s.command_prefix",
-			s.server_id        "s.server_id",
-			s.score_channel_id "s.score_channel_id"
+			u.id                    "u.id",
+			u.created_at            "u.created_at",
+			u.updated_at            "u.updated_at",
+			u.etterna_id            "u.etterna_id",
+			u.avatar                "u.avatar",
+			u.username              "u.username",
+			u.last_recent_score_key "u.last_recent_score_key",
+			u.msd_overall           "u.msd_overall",
+			u.msd_stream            "u.msd_stream",
+			u.msd_jumpstream        "u.msd_jumpstream",
+			u.msd_handstream        "u.msd_handstream",
+			u.msd_stamina           "u.msd_stamina",
+			u.msd_jackspeed         "u.msd_jackspeed",
+			u.msd_chordjack         "u.msd_chordjack",
+			u.msd_technical         "u.msd_technical",
+			s.id                    "s.id",
+			s.created_at            "s.created_at",
+			s.updated_at            "s.updated_at",
+			s.command_prefix        "s.command_prefix",
+			s.server_id             "s.server_id",
+			s.score_channel_id      "s.score_channel_id"
 		FROM
 			etterna_users u
 		INNER JOIN users_discord_servers uds ON uds.username=u.username
@@ -309,69 +319,149 @@ func (bot *Bot) trackRecentPlays() {
 			return
 		}
 
+		s := scores[0]
+
+		// We've already seen this score
+		if v.User.LastRecentScoreKey.Valid && s.Key == v.User.LastRecentScoreKey.String {
+			continue
+		}
+
+		if err := bot.ett.GetScoreDetail(&s); err != nil {
+			fmt.Println("Failed to get score details", s.Key, err)
+			return
+		}
+
+		latestUser, err := bot.ett.GetByUsername(v.User.Username)
+
+		if err != nil {
+			fmt.Println("Failed to look up recent user", v.User.Username, err)
+			return
+		}
+
+		diffMSD := etterna.MSD{
+			Overall:    latestUser.Overall - v.User.MSDOverall,
+			Stream:     latestUser.Stream - v.User.MSDStream,
+			Jumpstream: latestUser.Jumpstream - v.User.MSDJumpstream,
+			Handstream: latestUser.Handstream - v.User.MSDHandstream,
+			Stamina:    latestUser.Stamina - v.User.MSDStamina,
+			JackSpeed:  latestUser.JackSpeed - v.User.MSDJackSpeed,
+			Chordjack:  latestUser.Chordjack - v.User.MSDChordjack,
+			Technical:  latestUser.Technical - v.User.MSDTechnical,
+		}
+
+		v.User.MSDOverall = latestUser.Overall
+		v.User.MSDStream = latestUser.Stream
+		v.User.MSDJumpstream = latestUser.Jumpstream
+		v.User.MSDHandstream = latestUser.Handstream
+		v.User.MSDStamina = latestUser.Stamina
+		v.User.MSDJackSpeed = latestUser.JackSpeed
+		v.User.MSDChordjack = latestUser.Chordjack
+		v.User.MSDTechnical = latestUser.Technical
+		v.User.LastRecentScoreKey.String = s.Key
+		v.User.LastRecentScoreKey.Valid = true
+
+		bot.users.Save(v.User)
+
+		// If the score is invalid don't post it
+		if !s.Valid {
+			continue
+		}
+
+		gains := ""
+
+		if diffMSD.Overall >= 0.01 {
+			gains = fmt.Sprintf("➤ **Overall:** %.2f (+%.2f)\n", latestUser.Overall, diffMSD.Overall)
+		}
+
+		if diffMSD.Stream >= 0.01 {
+			gains = fmt.Sprintf("➤ **Stream:** %.2f (+%.2f)\n", latestUser.Stream, diffMSD.Stream)
+		}
+
+		if diffMSD.Jumpstream >= 0.01 {
+			gains = fmt.Sprintf("➤ **Jumpstream:** %.2f (+%.2f)\n", latestUser.Jumpstream, diffMSD.Jumpstream)
+		}
+
+		if diffMSD.Handstream >= 0.01 {
+			gains = fmt.Sprintf("➤ **Handstream:** %.2f (+%.2f)\n", latestUser.Handstream, diffMSD.Handstream)
+		}
+
+		if diffMSD.Stamina >= 0.01 {
+			gains = fmt.Sprintf("➤ **Stamina:** %.2f (+%.2f)\n", latestUser.Stamina, diffMSD.Stamina)
+		}
+
+		if diffMSD.JackSpeed >= 0.01 {
+			gains = fmt.Sprintf("➤ **JackSpeed:** %.2f (+%.2f)\n", latestUser.JackSpeed, diffMSD.JackSpeed)
+		}
+
+		if diffMSD.Chordjack >= 0.01 {
+			gains = fmt.Sprintf("➤ **Chordjack:** %.2f (+%.2f)\n", latestUser.Chordjack, diffMSD.Chordjack)
+		}
+
+		if diffMSD.Technical >= 0.01 {
+			gains = fmt.Sprintf("➤ **Technical:** %.2f (+%.2f)\n", latestUser.Technical, diffMSD.Technical)
+		}
+
+		song, err := bot.ett.GetSong(s.Song.ID)
+
+		if err != nil {
+			fmt.Println("Failed to get song details", song.ID, err)
+			return
+		}
+
+		s.Song = *song
+		rateStr := fmt.Sprintf("%.f", s.Rate)
+
+		// Make sure rates like "1" print as "1.0"
+		if len(rateStr) == 1 {
+			rateStr = rateStr + ".0"
+		}
+
+		scoreURL := fmt.Sprintf("https://etternaonline.com/score/view/%s%d", s.Key, v.User.EtternaID)
+		description := fmt.Sprintf(
+			"**[%s (%sx)](%s)**\n\n"+
+				"➤ **Acc:** %.2f%% @ %sx\n"+
+				"➤ **Score:** %.2f | **Nerfed:** %.2f\n"+
+				"➤ **Hits:** %d/%d/%d/%d/%d/%d\n"+
+				"➤ **Max combo:** x%d",
+			s.Song.Name,
+			rateStr,
+			scoreURL,
+			s.Accuracy,
+			rateStr,
+			s.MSD.Overall,
+			s.Nerfed,
+			s.Marvelous,
+			s.Perfect,
+			s.Great,
+			s.Good,
+			s.Bad,
+			s.Miss,
+			s.MaxCombo)
+
+		if gains != "" {
+			description += "\n\n" + gains
+		}
+
+		msg := &discordgo.MessageEmbed{
+			URL: scoreURL,
+			Author: &discordgo.MessageEmbedAuthor{
+				Name:    "Recent play by " + v.User.Username,
+				IconURL: "https://etternaonline.com/avatars/" + v.User.Avatar,
+			},
+			Color:       8519899,
+			Description: description,
+			Timestamp:   s.Date.UTC().Format(time.RFC3339),
+			Footer: &discordgo.MessageEmbedFooter{
+				IconURL: "https://i.imgur.com/HwIkGCk.png",
+				Text:    v.User.Username,
+			},
+			Thumbnail: &discordgo.MessageEmbedThumbnail{
+				URL: "https://etternaonline.com/song_images/bg/" + s.Song.BackgroundURL,
+			},
+		}
+
 		for _, server := range v.Servers {
-			s := scores[0]
-
-			if err := bot.ett.GetScoreDetail(&s); err != nil {
-				fmt.Println("Failed to get score details", s.Key, err)
-				return
-			}
-
-			song, err := bot.ett.GetSong(s.Song.ID)
-
-			if err != nil {
-				fmt.Println("Failed to get song details", song.ID, err)
-				return
-			}
-
-			s.Song = *song
-			rateStr := fmt.Sprintf("%.f", s.Rate)
-
-			// Make sure rates like "1" print as "1.0"
-			if len(rateStr) == 1 {
-				rateStr = rateStr + ".0"
-			}
-
-			scoreURL := fmt.Sprintf("https://etternaonline.com/score/view/%s%d", s.Key, v.User.EtternaID)
-			description := fmt.Sprintf(
-				"**[%s (%sx)](%s)**\n\n"+
-					"➤ **Acc:** %.2f%% @ %sx\n"+
-					"➤ **Score:** %.2f | **Nerfed:** %.2f\n"+
-					"➤ **Hits:** %d/%d/%d/%d/%d/%d\n"+
-					"➤ **Max combo:** x%d",
-				s.Song.Name,
-				rateStr,
-				scoreURL,
-				s.Accuracy,
-				rateStr,
-				s.MSD.Overall,
-				s.Nerfed,
-				s.Marvelous,
-				s.Perfect,
-				s.Great,
-				s.Good,
-				s.Bad,
-				s.Miss,
-				s.MaxCombo)
-
-			bot.s.ChannelMessageSendEmbed(server.ScoreChannelID.String,
-				&discordgo.MessageEmbed{
-					URL: scoreURL,
-					Author: &discordgo.MessageEmbedAuthor{
-						Name:    "Recent play by " + v.User.Username,
-						IconURL: "https://etternaonline.com/avatars/" + v.User.Avatar,
-					},
-					Color:       8519899,
-					Description: description,
-					Timestamp:   s.Date.UTC().Format(time.RFC3339),
-					Footer: &discordgo.MessageEmbedFooter{
-						IconURL: "https://i.imgur.com/HwIkGCk.png",
-						Text:    v.User.Username,
-					},
-					Thumbnail: &discordgo.MessageEmbedThumbnail{
-						URL: "https://etternaonline.com/song_images/bg/" + s.Song.BackgroundURL,
-					},
-				})
+			bot.s.ChannelMessageSendEmbed(server.ScoreChannelID.String, msg)
 		}
 	}
 }

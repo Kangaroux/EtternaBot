@@ -95,6 +95,7 @@ func (s EtternaUserService) Save(user *model.EtternaUser) error {
 			username,
 			etterna_id,
 			avatar,
+			last_recent_score_key,
 			msd_overall,
 			msd_stream,
 			msd_jumpstream,
@@ -104,7 +105,7 @@ func (s EtternaUserService) Save(user *model.EtternaUser) error {
 			msd_chordjack,
 			msd_technical
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 		RETURNING id`
 
 		err = s.db.Get(&user.ID, q,
@@ -113,6 +114,7 @@ func (s EtternaUserService) Save(user *model.EtternaUser) error {
 			user.Username,
 			user.EtternaID,
 			user.Avatar,
+			user.LastRecentScoreKey,
 			user.MSDOverall,
 			user.MSDStream,
 			user.MSDJumpstream,
@@ -126,20 +128,22 @@ func (s EtternaUserService) Save(user *model.EtternaUser) error {
 		q := `UPDATE "etterna_users" SET
 			updated_at=$2,
 			avatar=$3,
-			msd_overall=$4,
-			msd_stream=$5,
-			msd_jumpstream=$6,
-			msd_handstream=$7,
-			msd_stamina=$8,
-			msd_jackspeed=$9,
-			msd_chordjack=$10,
-			msd_technical=$11
+			last_recent_score_key=$4,
+			msd_overall=$5,
+			msd_stream=$6,
+			msd_jumpstream=$7,
+			msd_handstream=$8,
+			msd_stamina=$9,
+			msd_jackspeed=$10,
+			msd_chordjack=$11,
+			msd_technical=$12
 		WHERE username=$1`
 
 		_, err = s.db.Exec(q,
 			user.Username,
 			user.UpdatedAt,
 			user.Avatar,
+			user.LastRecentScoreKey,
 			user.MSDOverall,
 			user.MSDStream,
 			user.MSDJumpstream,

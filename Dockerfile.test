@@ -1,0 +1,9 @@
+# Build the app in its own container to cache dependencies
+FROM golang:alpine
+RUN apk update && apk add curl git
+ENV CGO_ENABLED=0 GOOS=linux GOARCH=amd64
+WORKDIR /app/src
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+CMD ./migrate.sh && go test ./...

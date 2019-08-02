@@ -9,6 +9,7 @@ services:
       - POSTGRES_USER=${POSTGRES_USER:-etterna}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
       - POSTGRES_DB=${POSTGRES_DB:-etterna}
+      - DATABASE_HOST=db
     depends_on:
       - db
   db:

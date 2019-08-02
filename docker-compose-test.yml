@@ -1,0 +1,20 @@
+version: "3"
+services:
+  bot-test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    environment:
+      - ETTERNA_API_KEY=testkey
+      - POSTGRES_USER=etterna
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=etterna
+      - DATABASE_HOST=db-test
+    depends_on:
+      - db-test
+  db-test:
+    image: postgres:11
+    environment:
+      - POSTGRES_USER=etterna
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=etterna

@@ -16,22 +16,20 @@ const (
 )
 
 type Bot struct {
-	db        *sqlx.DB
-	ett       etterna.EtternaAPI
-	s         *discordgo.Session
-	serverMap map[string]*model.DiscordServer
-	servers   model.DiscordServerServicer
-	users     model.EtternaUserServicer
+	db      *sqlx.DB
+	ett     etterna.EtternaAPI
+	s       *discordgo.Session
+	servers model.DiscordServerServicer
+	users   model.EtternaUserServicer
 }
 
 func New(s *discordgo.Session, db *sqlx.DB, etternaAPIKey string) Bot {
 	bot := Bot{
-		db:        db,
-		ett:       etterna.New(etternaAPIKey),
-		s:         s,
-		serverMap: make(map[string]*model.DiscordServer),
-		servers:   service.NewDiscordServerService(db),
-		users:     service.NewUserService(db),
+		db:      db,
+		ett:     etterna.New(etternaAPIKey),
+		s:       s,
+		servers: service.NewDiscordServerService(db),
+		users:   service.NewUserService(db),
 	}
 
 	s.AddHandler(bot.guildCreate)
@@ -61,8 +59,6 @@ func (bot *Bot) guildCreate(s *discordgo.Session, g *discordgo.GuildCreate) {
 			fmt.Println("Created record for server", g.Name)
 		}
 	}
-
-	bot.serverMap[g.ID] = server
 }
 
 func (bot *Bot) messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
@@ -70,7 +66,12 @@ func (bot *Bot) messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) 
 		return
 	}
 
-	server := bot.serverMap[m.GuildID]
+	server, err := bot.servers.Get(m.GuildID)
+
+	if err != nil {
+		fmt.Println("ERROR: Unknown server", m.GuildID)
+		return
+	}
 
 	if !strings.HasPrefix(m.Message.Content, server.CommandPrefix) {
 		return

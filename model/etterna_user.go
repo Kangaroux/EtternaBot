@@ -1,14 +1,23 @@
 package model
 
-type UserServicer interface {
+type EtternaUserServicer interface {
+	// Gets the id of the discord user associated with the given etterna user in a given server
+	GetRegisteredDiscordUserID(serverID, username string) (string, error)
+
 	// Gets the (cached) etterna user associated with a given discord ID in a given server
-	GetDiscordID(serverID, discordID string) (*EtternaUser, error)
+	GetRegisteredUser(serverID, discordID string) (*EtternaUser, error)
 
 	// Gets the (cached) etterna user with a given username
 	GetUsername(username string) (*EtternaUser, error)
 
 	// Updates/creates the (cached) etterna user
 	Save(user *EtternaUser) error
+
+	// Registers a discord user with an etterna user for a particular discord server
+	Register(username, serverID, discordID string) error
+
+	// Unregisters the discord user from any etterna users for a particular discord server
+	Unregister(serverID, discordID string) error
 }
 
 type EtternaUser struct {

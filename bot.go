@@ -60,38 +60,55 @@ func (bot *Bot) messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) 
 	}
 }
 
+// setUser registers an etterna user with the discord user who sent the message.
+// The process of registering as an etterna user is:
+// 1. Check if the etterna user is already registered
+// 2. Check if the discord user is already registered
+// 3. Check if the etterna user exists
+// 4. Register
 func (bot *Bot) setUser(m *discordgo.MessageCreate, args []string) {
 	if len(args) < 2 {
 		bot.s.ChannelMessageSend(m.ChannelID,
-			"Missing argument <username>. Usage: setuser <username>")
+			"Usage: setuser <username>")
 		return
 	}
 
 	username := strings.TrimSpace(args[1])
-
-	// Check and see if the user is already registered with an etterna user
-	registeredUser, err := bot.users.GetDiscordID(m.Author.ID)
+	discordID, err := bot.users.GetRegisteredDiscordUserID(m.GuildID, username)
 
 	if err != nil {
 		bot.s.ChannelMessageSend(m.ChannelID, err.Error())
 		return
 	}
 
-	if registeredUser != nil {
-		// Already registered to this user
-		if strings.ToLower(registeredUser.Username) == strings.ToLower(username) {
-			bot.s.ChannelMessageSend(m.ChannelID,
-				fmt.Sprintf("You are already registered as '%s'.", username))
-			return
-		}
-
+	if discordID == m.Author.ID {
 		bot.s.ChannelMessageSend(m.ChannelID,
-			"You are currently registered as another user. Use the 'unregister' command first and try again.")
+			fmt.Sprintf("You are already registered as '%s'.", username))
+		return
+	} else if discordID != "" {
+		bot.s.ChannelMessageSend(m.ChannelID,
+			fmt.Sprintf("Another user is already registered as '%s'.", username))
 		return
 	}
 
-	// See if the user is in the database
-	user, err := bot.users.GetUsername(username)
+	// Get the etterna user registered with this discord user
+	user, err := bot.users.GetRegisteredUser(m.GuildID, m.Author.ID)
+
+	if err != nil {
+		bot.s.ChannelMessageSend(m.ChannelID, err.Error())
+		return
+	}
+
+	if user != nil {
+		bot.s.ChannelMessageSend(m.ChannelID,
+			"You are already registered as another user. Use the 'unregister' "+
+				"command first and try again.")
+		return
+	}
+
+	// The discord user is not associated with any etterna users, look up
+	// the etterna user with that username
+	user, err = bot.users.GetUsername(username)
 
 	if err != nil {
 		bot.s.ChannelMessageSend(m.ChannelID, err.Error())
@@ -115,7 +132,7 @@ func (bot *Bot) setUser(m *discordgo.MessageCreate, args []string) {
 		}
 
 		user = &model.EtternaUser{
-			Username:      username,
+			Username:      ettUser.Username,
 			EtternaID:     id,
 			Avatar:        ettUser.AvatarURL,
 			MSDOverall:    ettUser.MSD.Overall,
@@ -127,51 +144,44 @@ func (bot *Bot) setUser(m *discordgo.MessageCreate, args []string) {
 			MSDChordjack:  ettUser.MSD.Chordjack,
 			MSDTechnical:  ettUser.MSD.Technical,
 		}
+
+		if err := bot.users.Save(user); err != nil {
+			bot.s.ChannelMessageSend(m.ChannelID, err.Error())
+			return
+		}
 	}
 
-	// This user is already associated with a discord user
-	// if user.DiscordID.Valid {
-	// 	if user.DiscordID.String == m.Author.ID {
-
-	// 	}
-
-	// 	bot.s.ChannelMessageSend(m.ChannelID,
-	// 		fmt.Sprintf("Another user is already registered as '%s'.", username))
-	// 	return
-	// }
-
-	// user.DiscordID.String = m.Author.ID
-	// user.DiscordID.Valid = true
-
-	if err := bot.users.Save(user); err != nil {
-		bot.s.ChannelMessageSend(m.ChannelID, err.Error())
-		return
-	}
-
-	bot.s.ChannelMessageSend(m.ChannelID,
-		fmt.Sprintf("Success! You are now registered as '%s'.", username))
-}
-
-func (bot *Bot) unregisterUser(m *discordgo.MessageCreate) {
-	user, err := bot.users.GetDiscordID(m.Author.ID)
+	ok, err := bot.users.Register(user.Username, m.GuildID, m.Author.ID)
 
 	if err != nil {
 		bot.s.ChannelMessageSend(m.ChannelID, err.Error())
 		return
 	}
 
-	if user == nil {
-		bot.s.ChannelMessageSend(m.ChannelID, "You are not registered to an Etterna user.")
-		return
+	if !ok {
+		// This can only happen due to a data race, still worth checking though
+		bot.s.ChannelMessageSend(m.ChannelID,
+			"You are currently registered as another user. Use the 'unregister' command "+
+				"first and try again.")
+	} else {
+		bot.s.ChannelMessageSend(m.ChannelID,
+			fmt.Sprintf("Success! You are now registered as '%s'.", user.Username))
 	}
+}
 
-	// user.DiscordID.Valid = false
+func (bot *Bot) unregisterUser(m *discordgo.MessageCreate) {
+	ok, err := bot.users.Unregister(m.GuildID, m.Author.ID)
 
-	if err := bot.users.Save(user); err != nil {
+	if err != nil {
 		bot.s.ChannelMessageSend(m.ChannelID, err.Error())
 		return
 	}
 
-	bot.s.ChannelMessageSend(m.ChannelID,
-		fmt.Sprintf("Success! You are no longer registered to '%s'.", user.Username))
+	if ok {
+		bot.s.ChannelMessageSend(m.ChannelID,
+			"Success! You are no longer registered. Use the setuser command to register "+
+				"as another user.")
+	} else {
+		bot.s.ChannelMessageSend(m.ChannelID, "You are not registered to an etterna user.")
+	}
 }

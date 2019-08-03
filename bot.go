@@ -458,7 +458,7 @@ func (bot *Bot) trackRecentPlays() {
 			},
 			Color:       8519899,
 			Description: description,
-			Timestamp:   s.Date.UTC().Format(time.RFC3339),
+			Timestamp:   s.Date.Format(time.RFC3339),
 			Footer: &discordgo.MessageEmbedFooter{
 				IconURL: "https://i.imgur.com/HwIkGCk.png",
 				Text:    v.User.Username,

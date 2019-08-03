@@ -14,16 +14,20 @@ services:
       - DATABASE_HOST=db
     depends_on:
       - db
+    networks:
+      net: {}
   db:
     image: postgres:11
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-etterna}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
       - POSTGRES_DB=${POSTGRES_DB:-etterna}
-    ports:
-      - "5432:5432"
     restart: always
     volumes:
       - "dbdata:/var/lib/postgresql"
+    networks:
+      net: {}
 volumes:
   dbdata:
+networks:
+  net:

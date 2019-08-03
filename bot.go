@@ -13,8 +13,9 @@ import (
 )
 
 const (
-	defaultPrefix      = ";"
-	recentPlayInterval = 1 * time.Minute
+	defaultPrefix             = ";"
+	minAccToDisplayRecentPlay = 97.0
+	recentPlayInterval        = 1 * time.Minute
 )
 
 type Bot struct {
@@ -349,14 +350,14 @@ func (bot *Bot) trackRecentPlays() {
 			Technical:  latestUser.Technical - v.User.MSDTechnical,
 		}
 
-		v.User.MSDOverall = latestUser.Overall
-		v.User.MSDStream = latestUser.Stream
-		v.User.MSDJumpstream = latestUser.Jumpstream
-		v.User.MSDHandstream = latestUser.Handstream
-		v.User.MSDStamina = latestUser.Stamina
-		v.User.MSDJackSpeed = latestUser.JackSpeed
-		v.User.MSDChordjack = latestUser.Chordjack
-		v.User.MSDTechnical = latestUser.Technical
+		v.User.MSDOverall = TruncateFloat(latestUser.Overall, 2)
+		v.User.MSDStream = TruncateFloat(latestUser.Stream, 2)
+		v.User.MSDJumpstream = TruncateFloat(latestUser.Jumpstream, 2)
+		v.User.MSDHandstream = TruncateFloat(latestUser.Handstream, 2)
+		v.User.MSDStamina = TruncateFloat(latestUser.Stamina, 2)
+		v.User.MSDJackSpeed = TruncateFloat(latestUser.JackSpeed, 2)
+		v.User.MSDChordjack = TruncateFloat(latestUser.Chordjack, 2)
+		v.User.MSDTechnical = TruncateFloat(latestUser.Technical, 2)
 		v.User.LastRecentScoreKey.String = s.Key
 		v.User.LastRecentScoreKey.Valid = true
 
@@ -402,6 +403,11 @@ func (bot *Bot) trackRecentPlays() {
 			gains = fmt.Sprintf("➤ **Technical:** %.2f (+%.2f)\n", latestUser.Technical, diffMSD.Technical)
 		}
 
+		// Only display the song if the player got above a certain acc or if they gained pp
+		if gains == "" && s.Accuracy < minAccToDisplayRecentPlay {
+			continue
+		}
+
 		song, err := bot.ett.GetSong(s.Song.ID)
 
 		if err != nil {
@@ -410,11 +416,12 @@ func (bot *Bot) trackRecentPlays() {
 		}
 
 		s.Song = *song
-		rateStr := fmt.Sprintf("%.f", s.Rate)
+		rateStr := fmt.Sprintf("%.2f", s.Rate)
+		length := len(rateStr)
 
-		// Make sure rates like "1" print as "1.0"
-		if len(rateStr) == 1 {
-			rateStr = rateStr + ".0"
+		// Remove a trailing zero if it exists (0.80 -> 0.8, 1.00 -> 1.0)
+		if rateStr[length-1] == '0' {
+			rateStr = rateStr[:length-1]
 		}
 
 		scoreURL := fmt.Sprintf("https://etternaonline.com/score/view/%s%d", s.Key, v.User.EtternaID)

@@ -3,10 +3,13 @@
 default: db bot
 
 bot:
-	docker-compose up --build -d bot
+	docker-compose up -d bot
 
 db:
 	docker-compose up -d db
+
+build:
+	docker-compose build bot
 
 psql:
 	docker-compose exec db psql

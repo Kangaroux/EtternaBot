@@ -14,3 +14,8 @@ type Bot struct {
 	Servers model.DiscordServerServicer
 	Users   model.EtternaUserServicer
 }
+
+type Play struct {
+	Score etterna.Score
+	User  model.EtternaUser
+}

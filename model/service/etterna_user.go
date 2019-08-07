@@ -80,6 +80,71 @@ func (s EtternaUserService) GetUsername(username string) (*model.EtternaUser, er
 	return user, nil
 }
 
+// GetRegisteredUsersForRecentPlays looks up all of the registered etterna users
+// that are in servers which have a scores channel set
+func (s EtternaUserService) GetRegisteredUsersForRecentPlays() ([]*model.RegisteredUserServers, error) {
+	var queryResults []struct {
+		model.EtternaUser   `db:"u"`
+		model.DiscordServer `db:"s"`
+	}
+
+	query := `
+		SELECT
+			u.id                    "u.id",
+			u.created_at            "u.created_at",
+			u.updated_at            "u.updated_at",
+			u.etterna_id            "u.etterna_id",
+			u.avatar                "u.avatar",
+			u.username              "u.username",
+			u.last_recent_score_key "u.last_recent_score_key",
+			u.msd_overall           "u.msd_overall",
+			u.msd_stream            "u.msd_stream",
+			u.msd_jumpstream        "u.msd_jumpstream",
+			u.msd_handstream        "u.msd_handstream",
+			u.msd_stamina           "u.msd_stamina",
+			u.msd_jackspeed         "u.msd_jackspeed",
+			u.msd_chordjack         "u.msd_chordjack",
+			u.msd_technical         "u.msd_technical",
+			s.id                    "s.id",
+			s.created_at            "s.created_at",
+			s.updated_at            "s.updated_at",
+			s.command_prefix        "s.command_prefix",
+			s.server_id             "s.server_id",
+			s.score_channel_id      "s.score_channel_id"
+		FROM
+			etterna_users u
+		INNER JOIN users_discord_servers uds ON uds.username=u.username
+		INNER JOIN discord_servers s ON s.server_id=uds.server_id
+		WHERE
+			s.score_channel_id IS NOT NULL
+	`
+
+	if err := s.db.Select(&queryResults, query); err != nil {
+		return nil, err
+	}
+
+	userMap := make(map[string]*model.RegisteredUserServers)
+
+	for _, r := range queryResults {
+		if _, exists := userMap[r.Username]; !exists {
+			userMap[r.Username] = &model.RegisteredUserServers{
+				User:    r.EtternaUser,
+				Servers: []model.DiscordServer{r.DiscordServer},
+			}
+		} else {
+			userMap[r.Username].Servers = append(userMap[r.Username].Servers, r.DiscordServer)
+		}
+	}
+
+	result := make([]*model.RegisteredUserServers, len(userMap))
+
+	for _, v := range userMap {
+		result = append(result, v)
+	}
+
+	return result, nil
+}
+
 // Save updates an etterna user, creating a new record if necessary
 func (s EtternaUserService) Save(user *model.EtternaUser) error {
 	var err error

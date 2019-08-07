@@ -12,6 +12,10 @@ type EtternaUserServicer interface {
 	// Gets the (cached) etterna user with a given username
 	GetUsername(username string) (*EtternaUser, error)
 
+	// Gets all etterna users that are registered as well as the discord server that
+	// each user is registered in. Used for tracking recent plays
+	GetRegisteredUsersForRecentPlays() ([]*RegisteredUserServers, error)
+
 	// Updates/creates the (cached) etterna user
 	Save(user *EtternaUser) error
 
@@ -36,4 +40,9 @@ type EtternaUser struct {
 	MSDJackSpeed       float64        `db:"msd_jackspeed"`
 	MSDChordjack       float64        `db:"msd_chordjack"`
 	MSDTechnical       float64        `db:"msd_technical"`
+}
+
+type RegisteredUserServers struct {
+	User    EtternaUser
+	Servers []DiscordServer
 }

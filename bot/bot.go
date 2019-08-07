@@ -6,11 +6,11 @@ import (
 	"time"
 
 	eb "github.com/Kangaroux/etternabot"
-	"github.com/Kangaroux/etternabot/util"
 	"github.com/Kangaroux/etternabot/bot/commands"
 	"github.com/Kangaroux/etternabot/etterna"
 	"github.com/Kangaroux/etternabot/model"
 	"github.com/Kangaroux/etternabot/model/service"
+	"github.com/Kangaroux/etternabot/util"
 	"github.com/bwmarrin/discordgo"
 	"github.com/jmoiron/sqlx"
 )
@@ -98,106 +98,25 @@ func messageCreate(bot *eb.Bot, m *discordgo.MessageCreate) {
 	case "setuser":
 		commands.SetUser(bot, m, cmdParts)
 	case "unregister":
-		unregisterUser(bot, m)
+		commands.UnregisterUser(bot, m)
 	// case "track":
 	// 	bot.trackRecentPlays()
 	case "here":
-		setScoresChannel(bot, server, m)
+		commands.SetScoresChannel(bot, server, m)
 	default:
 		bot.Session.ChannelMessageSend(m.ChannelID, fmt.Sprintf("Unrecognized command '%s'.", cmdParts[0]))
 	}
 }
 
-func setScoresChannel(bot *eb.Bot, server *model.DiscordServer, m *discordgo.MessageCreate) {
-	server.ScoreChannelID.String = m.ChannelID
-	server.ScoreChannelID.Valid = true
-
-	if err := bot.Servers.Save(server); err != nil {
-		bot.Session.ChannelMessageSend(m.ChannelID, err.Error())
-		return
-	}
-}
-
-func unregisterUser(bot *eb.Bot, m *discordgo.MessageCreate) {
-	ok, err := bot.Users.Unregister(m.GuildID, m.Author.ID)
+func trackRecentPlays(bot *eb.Bot) {
+	users, err := bot.Users.GetRegisteredUsersForRecentPlays()
 
 	if err != nil {
-		bot.Session.ChannelMessageSend(m.ChannelID, err.Error())
+		fmt.Println("Failed to look up users for recent plays")
 		return
 	}
 
-	if ok {
-		bot.Session.ChannelMessageSend(m.ChannelID,
-			"Success! You are no longer registered. Use the setuser command to register "+
-				"as another user.")
-	} else {
-		bot.Session.ChannelMessageSend(m.ChannelID, "You are not registered to an etterna user.")
-	}
-}
-
-func trackRecentPlays(bot *eb.Bot) {
-	type RegisteredUser struct {
-		model.EtternaUser   `db:"u"`
-		model.DiscordServer `db:"s"`
-	}
-
-	type RegisteredUserServers struct {
-		User    model.EtternaUser
-		Servers []model.DiscordServer
-	}
-
-	var results []RegisteredUser
-
-	query := `
-		SELECT
-			u.id                    "u.id",
-			u.created_at            "u.created_at",
-			u.updated_at            "u.updated_at",
-			u.etterna_id            "u.etterna_id",
-			u.avatar                "u.avatar",
-			u.username              "u.username",
-			u.last_recent_score_key "u.last_recent_score_key",
-			u.msd_overall           "u.msd_overall",
-			u.msd_stream            "u.msd_stream",
-			u.msd_jumpstream        "u.msd_jumpstream",
-			u.msd_handstream        "u.msd_handstream",
-			u.msd_stamina           "u.msd_stamina",
-			u.msd_jackspeed         "u.msd_jackspeed",
-			u.msd_chordjack         "u.msd_chordjack",
-			u.msd_technical         "u.msd_technical",
-			s.id                    "s.id",
-			s.created_at            "s.created_at",
-			s.updated_at            "s.updated_at",
-			s.command_prefix        "s.command_prefix",
-			s.server_id             "s.server_id",
-			s.score_channel_id      "s.score_channel_id"
-		FROM
-			etterna_users u
-		INNER JOIN users_discord_servers uds ON uds.username=u.username
-		INNER JOIN discord_servers s ON s.server_id=uds.server_id
-		WHERE
-			s.score_channel_id IS NOT NULL
-	`
-
-	if err := bot.DB.Select(&results, query); err != nil {
-		fmt.Println("Failed to look up users to track recent plays", err)
-		return
-	}
-
-	userMap := make(map[string]*RegisteredUserServers)
-
-	for _, r := range results {
-		if _, exists := userMap[r.Username]; !exists {
-			userMap[r.Username] = &RegisteredUserServers{
-				User:    r.EtternaUser,
-				Servers: []model.DiscordServer{r.DiscordServer},
-			}
-		} else {
-			userMap[r.Username].Servers = append(userMap[r.Username].Servers, r.DiscordServer)
-		}
-	}
-
-	for _, v := range userMap {
+	for _, v := range users {
 		scores, err := bot.API.GetScores(v.User.EtternaID, 1, 0, etterna.SortDate, false)
 
 		if err != nil {

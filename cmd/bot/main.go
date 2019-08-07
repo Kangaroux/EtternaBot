@@ -10,7 +10,7 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
-	"github.com/Kangaroux/etternabot"
+	"github.com/Kangaroux/etternabot/bot"
 	"github.com/bwmarrin/discordgo"
 	"github.com/jmoiron/sqlx"
 )
@@ -49,7 +49,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	etternabot.New(dg, db, etternaAPIKey)
+	bot.New(dg, db, etternaAPIKey)
 
 	if err := dg.Open(); err != nil {
 		fmt.Println("Failed to open discord connection:", err)

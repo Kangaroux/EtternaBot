@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/antchfx/htmlquery"
+	"github.com/Kangaroux/htmlquery"
 )
 
 const (

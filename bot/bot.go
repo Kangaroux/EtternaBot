@@ -6,6 +6,7 @@ import (
 	"time"
 
 	eb "github.com/Kangaroux/etternabot"
+	"github.com/Kangaroux/etternabot/util"
 	"github.com/Kangaroux/etternabot/bot/commands"
 	"github.com/Kangaroux/etternabot/etterna"
 	"github.com/Kangaroux/etternabot/model"
@@ -37,14 +38,9 @@ func New(s *discordgo.Session, db *sqlx.DB, etternaAPIKey string) eb.Bot {
 		messageCreate(&bot, m)
 	})
 
-	// Check for recent plays periodically
-	go func() {
-		for {
-			fmt.Println("Tracking recent plays...")
-			bot.trackRecentPlays()
-			<-time.After(recentPlayInterval)
-		}
-	}()
+	s.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
+		trackRecentPlays(&bot)
+	})
 
 	return bot
 }
@@ -72,8 +68,8 @@ func guildCreate(bot *eb.Bot, g *discordgo.GuildCreate) {
 	}
 }
 
-func messageCreate(bot *eb.Bot, s *discordgo.Session, m *discordgo.MessageCreate) {
-	if m.Author.ID == s.State.User.ID {
+func messageCreate(bot *eb.Bot, m *discordgo.MessageCreate) {
+	if m.Author.ID == bot.Session.State.User.ID {
 		return
 	}
 
@@ -102,17 +98,17 @@ func messageCreate(bot *eb.Bot, s *discordgo.Session, m *discordgo.MessageCreate
 	case "setuser":
 		commands.SetUser(bot, m, cmdParts)
 	case "unregister":
-		bot.unregisterUser(m)
+		unregisterUser(bot, m)
 	// case "track":
 	// 	bot.trackRecentPlays()
 	case "here":
-		bot.setScoresChannel(server, m)
+		setScoresChannel(bot, server, m)
 	default:
-		s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("Unrecognized command '%s'.", cmdParts[0]))
+		bot.Session.ChannelMessageSend(m.ChannelID, fmt.Sprintf("Unrecognized command '%s'.", cmdParts[0]))
 	}
 }
 
-func (bot *Bot) setScoresChannel(server *model.DiscordServer, m *discordgo.MessageCreate) {
+func setScoresChannel(bot *eb.Bot, server *model.DiscordServer, m *discordgo.MessageCreate) {
 	server.ScoreChannelID.String = m.ChannelID
 	server.ScoreChannelID.Valid = true
 
@@ -122,7 +118,7 @@ func (bot *Bot) setScoresChannel(server *model.DiscordServer, m *discordgo.Messa
 	}
 }
 
-func (bot *Bot) unregisterUser(m *discordgo.MessageCreate) {
+func unregisterUser(bot *eb.Bot, m *discordgo.MessageCreate) {
 	ok, err := bot.Users.Unregister(m.GuildID, m.Author.ID)
 
 	if err != nil {
@@ -139,7 +135,7 @@ func (bot *Bot) unregisterUser(m *discordgo.MessageCreate) {
 	}
 }
 
-func (bot *Bot) trackRecentPlays() {
+func trackRecentPlays(bot *eb.Bot) {
 	type RegisteredUser struct {
 		model.EtternaUser   `db:"u"`
 		model.DiscordServer `db:"s"`
@@ -240,14 +236,14 @@ func (bot *Bot) trackRecentPlays() {
 			Technical:  latestUser.Technical - v.User.MSDTechnical,
 		}
 
-		v.User.MSDOverall = TruncateFloat(latestUser.Overall, 2)
-		v.User.MSDStream = TruncateFloat(latestUser.Stream, 2)
-		v.User.MSDJumpstream = TruncateFloat(latestUser.Jumpstream, 2)
-		v.User.MSDHandstream = TruncateFloat(latestUser.Handstream, 2)
-		v.User.MSDStamina = TruncateFloat(latestUser.Stamina, 2)
-		v.User.MSDJackSpeed = TruncateFloat(latestUser.JackSpeed, 2)
-		v.User.MSDChordjack = TruncateFloat(latestUser.Chordjack, 2)
-		v.User.MSDTechnical = TruncateFloat(latestUser.Technical, 2)
+		v.User.MSDOverall = util.TruncateFloat(latestUser.Overall, 2)
+		v.User.MSDStream = util.TruncateFloat(latestUser.Stream, 2)
+		v.User.MSDJumpstream = util.TruncateFloat(latestUser.Jumpstream, 2)
+		v.User.MSDHandstream = util.TruncateFloat(latestUser.Handstream, 2)
+		v.User.MSDStamina = util.TruncateFloat(latestUser.Stamina, 2)
+		v.User.MSDJackSpeed = util.TruncateFloat(latestUser.JackSpeed, 2)
+		v.User.MSDChordjack = util.TruncateFloat(latestUser.Chordjack, 2)
+		v.User.MSDTechnical = util.TruncateFloat(latestUser.Technical, 2)
 		v.User.LastRecentScoreKey.String = s.Key
 		v.User.LastRecentScoreKey.Valid = true
 

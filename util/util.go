@@ -1,4 +1,4 @@
-package etternabot
+package util
 
 import (
 	"math"

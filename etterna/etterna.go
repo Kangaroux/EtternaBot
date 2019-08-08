@@ -78,6 +78,14 @@ func New(apiKey string) EtternaAPI {
 	}
 }
 
+func (api *EtternaAPI) BaseAPIURL() string {
+	return api.baseAPIURL
+}
+
+func (api *EtternaAPI) BaseURL() string {
+	return api.baseURL
+}
+
 // GetByUsername returns the user data for a given username. If the user does not
 // exist, the error code is ErrNotFound.
 func (api *EtternaAPI) GetByUsername(username string) (*User, error) {
@@ -278,20 +286,22 @@ func (api *EtternaAPI) GetScores(userID int, n uint, start uint, sortColumn Sort
 	return scores, nil
 }
 
-// GetScoreDetail looks up additional details for a given score.
-func (api *EtternaAPI) GetScoreDetail(score *Score) error {
+// GetScoreDetail gets the full details of a song (except for the nerf rating, ty rop)
+func (api *EtternaAPI) GetScoreDetail(scoreKey string) (*Score, error) {
 	var payload []struct {
-		Modifiers string
-		Datetime  string
-		Valid     string
+		scorePayload
 		MaxCombo  string
+		Valid     string
+		Modifiers string
+		DateTime  string
+		MinesHit  string `json:"hitmine"`
 	}
 
-	reqURL := fmt.Sprintf(api.baseAPIURL+"/score?api_key=%s&key=%s", api.apiKey, score.Key[:41])
+	reqURL := fmt.Sprintf(api.baseAPIURL+"/score?api_key=%s&key=%s", api.apiKey, scoreKey[:41])
 	resp, err := http.PostForm(reqURL, url.Values{})
 
 	if err != nil {
-		return &Error{
+		return nil, &Error{
 			Code:    ErrUnexpected,
 			Context: err,
 			Msg:     "Unexpected error trying to retreive score details",
@@ -299,7 +309,7 @@ func (api *EtternaAPI) GetScoreDetail(score *Score) error {
 	}
 
 	if resp.StatusCode == http.StatusNotFound {
-		return &Error{
+		return nil, &Error{
 			Code:    ErrNotFound,
 			Context: err,
 			Msg:     "Score does not exist.",
@@ -309,7 +319,7 @@ func (api *EtternaAPI) GetScoreDetail(score *Score) error {
 	body, err := ioutil.ReadAll(resp.Body)
 
 	if err != nil {
-		return &Error{
+		return nil, &Error{
 			Code:    ErrUnexpected,
 			Context: err,
 			Msg:     "Unexpected error trying to retreive score details",
@@ -317,19 +327,32 @@ func (api *EtternaAPI) GetScoreDetail(score *Score) error {
 	}
 
 	if err := json.Unmarshal(body, &payload); err != nil {
-		return &Error{
+		return nil, &Error{
 			Code:    ErrUnexpected,
 			Context: err,
 			Msg:     "Unexpected error trying to retreive score details",
 		}
 	}
 
-	score.MaxCombo, _ = strconv.Atoi(payload[0].MaxCombo)
-	score.Valid = payload[0].Valid == "1"
-	score.Date, _ = time.Parse("2006-01-02 15:04:05", payload[0].Datetime)
-	score.Mods = payload[0].Modifiers
+	p := payload[0]
 
-	return nil
+	score := Score{}
+
+	score.Overall, _ = strconv.ParseFloat(p.Overall, 64)
+	score.Stream, _ = strconv.ParseFloat(p.Stream, 64)
+	score.Jumpstream, _ = strconv.ParseFloat(p.Jumpstream, 64)
+	score.Handstream, _ = strconv.ParseFloat(p.Handstream, 64)
+	score.Stamina, _ = strconv.ParseFloat(p.Stamina, 64)
+	score.JackSpeed, _ = strconv.ParseFloat(p.JackSpeed, 64)
+	score.Chordjack, _ = strconv.ParseFloat(p.Chordjack, 64)
+	score.Technical, _ = strconv.ParseFloat(p.Technical, 64)
+	score.MaxCombo, _ = strconv.Atoi(p.MaxCombo)
+	score.Valid = p.Valid == "1"
+	score.Date, _ = time.Parse("2006-01-02 15:04:05", p.DateTime)
+	score.Mods = p.Modifiers
+	score.MinesHit, _ = strconv.Atoi(p.MinesHit)
+
+	return &score, nil
 }
 
 func (api *EtternaAPI) GetSong(id int) (*Song, error) {

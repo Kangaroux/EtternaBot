@@ -37,12 +37,12 @@ func New(s *discordgo.Session, db *sqlx.DB, etternaAPIKey string) eb.Bot {
 		messageCreate(&bot, m)
 	})
 
-	s.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
-		go func() {
-			commands.TrackRecentPlays(&bot, defaultRecentPlayMinAcc)
-			<-time.After(recentPlayInterval)
-		}()
-	})
+	// s.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
+	// 	go func() {
+	// 		commands.TrackRecentPlays(&bot, defaultRecentPlayMinAcc)
+	// 		<-time.After(recentPlayInterval)
+	// 	}()
+	// })
 
 	return bot
 }

@@ -54,47 +54,11 @@ func SetUser(bot *eb.Bot, m *discordgo.MessageCreate, args []string) {
 
 	// The discord user is not associated with any etterna users, look up
 	// the etterna user with that username
-	user, err = bot.Users.GetUsername(username)
+	user, err = getUserOrCreate(bot, username)
 
 	if err != nil {
 		bot.Session.ChannelMessageSend(m.ChannelID, err.Error())
 		return
-	}
-
-	// User doesn't exist, try and look them up
-	if user == nil {
-		ettUser, err := bot.API.GetByUsername(username)
-
-		if err != nil {
-			bot.Session.ChannelMessageSend(m.ChannelID, err.Error())
-			return
-		}
-
-		id, err := bot.API.GetUserID(username)
-
-		if err != nil {
-			bot.Session.ChannelMessageSend(m.ChannelID, err.Error())
-			return
-		}
-
-		user = &model.EtternaUser{
-			Username:      ettUser.Username,
-			EtternaID:     id,
-			Avatar:        ettUser.AvatarURL,
-			MSDOverall:    ettUser.MSD.Overall,
-			MSDStream:     ettUser.MSD.Stream,
-			MSDJumpstream: ettUser.MSD.Jumpstream,
-			MSDHandstream: ettUser.MSD.Handstream,
-			MSDStamina:    ettUser.MSD.Stamina,
-			MSDJackSpeed:  ettUser.MSD.JackSpeed,
-			MSDChordjack:  ettUser.MSD.Chordjack,
-			MSDTechnical:  ettUser.MSD.Technical,
-		}
-
-		if err := bot.Users.Save(user); err != nil {
-			bot.Session.ChannelMessageSend(m.ChannelID, err.Error())
-			return
-		}
 	}
 
 	ok, err := bot.Users.Register(user.Username, m.GuildID, m.Author.ID)
@@ -113,4 +77,40 @@ func SetUser(bot *eb.Bot, m *discordgo.MessageCreate, args []string) {
 		bot.Session.ChannelMessageSend(m.ChannelID,
 			fmt.Sprintf("Success! You are now registered as '%s'.", user.Username))
 	}
+}
+
+// getUserOrCreate returns the etterna user with the given username, inserting the user into the
+// database automatically if they don't already exist
+func getUserOrCreate(bot *eb.Bot, username string) (*model.EtternaUser, error) {
+	etternaUser, err := bot.API.GetByUsername(username)
+
+	if err != nil {
+		return nil, err
+	}
+
+	id, err := bot.API.GetUserID(username)
+
+	if err != nil {
+		return nil, err
+	}
+
+	user := &model.EtternaUser{
+		Username:      etternaUser.Username,
+		EtternaID:     id,
+		Avatar:        etternaUser.AvatarURL,
+		MSDOverall:    etternaUser.MSD.Overall,
+		MSDStream:     etternaUser.MSD.Stream,
+		MSDJumpstream: etternaUser.MSD.Jumpstream,
+		MSDHandstream: etternaUser.MSD.Handstream,
+		MSDStamina:    etternaUser.MSD.Stamina,
+		MSDJackSpeed:  etternaUser.MSD.JackSpeed,
+		MSDChordjack:  etternaUser.MSD.Chordjack,
+		MSDTechnical:  etternaUser.MSD.Technical,
+	}
+
+	if err := bot.Users.Save(user); err != nil {
+		return nil, err
+	}
+
+	return user, nil
 }

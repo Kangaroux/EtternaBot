@@ -52,6 +52,7 @@ type Score struct {
 	MaxCombo int
 	Mods     string
 	Valid    bool
+	MinesHit int
 	Song     Song
 
 	Judgements

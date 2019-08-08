@@ -19,6 +19,7 @@ const (
 	recentPlayInterval      = 2 * time.Minute // How often to check for recent plays
 )
 
+// New returns a new discord bot instance that is ready to be started
 func New(s *discordgo.Session, db *sqlx.DB, etternaAPIKey string) eb.Bot {
 	bot := eb.Bot{
 		DB:      db,
@@ -36,11 +37,8 @@ func New(s *discordgo.Session, db *sqlx.DB, etternaAPIKey string) eb.Bot {
 		messageCreate(&bot, m)
 	})
 
-	s.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
-		go func() {
-			TrackAllRecentPlays(&bot, defaultRecentPlayMinAcc)
-			<-time.After(recentPlayInterval)
-		}()
+	s.AddHandlerOnce(func(s *discordgo.Session, r *discordgo.Ready) {
+		ready(&bot, r)
 	})
 
 	return bot
@@ -107,4 +105,11 @@ func messageCreate(bot *eb.Bot, m *discordgo.MessageCreate) {
 	default:
 		bot.Session.ChannelMessageSend(m.ChannelID, fmt.Sprintf("Unrecognized command '%s'.", cmdParts[0]))
 	}
+}
+
+func ready(bot *eb.Bot, r *discordgo.Ready) {
+	go func() {
+		TrackAllRecentPlays(bot, defaultRecentPlayMinAcc)
+		<-time.After(recentPlayInterval)
+	}()
 }

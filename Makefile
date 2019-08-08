@@ -1,4 +1,4 @@
-.PHONY: migrations
+.PHONY: migrations bot
 
 default: db bot
 

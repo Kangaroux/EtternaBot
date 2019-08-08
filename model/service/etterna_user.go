@@ -126,17 +126,17 @@ func (s EtternaUserService) GetRegisteredUsersForRecentPlays() ([]*model.Registe
 	userMap := make(map[string]*model.RegisteredUserServers)
 
 	for _, r := range queryResults {
-		if _, exists := userMap[r.Username]; !exists {
+		if v, exists := userMap[r.Username]; !exists {
 			userMap[r.Username] = &model.RegisteredUserServers{
 				User:    r.EtternaUser,
 				Servers: []model.DiscordServer{r.DiscordServer},
 			}
 		} else {
-			userMap[r.Username].Servers = append(userMap[r.Username].Servers, r.DiscordServer)
+			v.Servers = append(v.Servers, r.DiscordServer)
 		}
 	}
 
-	result := make([]*model.RegisteredUserServers, len(userMap))
+	var result []*model.RegisteredUserServers
 
 	for _, v := range userMap {
 		result = append(result, v)

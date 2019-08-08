@@ -9,10 +9,10 @@ import (
 	"syscall"
 	"time"
 
-	_ "github.com/lib/pq"
 	"github.com/Kangaroux/etternabot/bot"
 	"github.com/bwmarrin/discordgo"
 	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 )
 
 var (

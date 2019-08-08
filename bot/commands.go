@@ -10,8 +10,15 @@ import (
 )
 
 // CmdRecentPlay gets a user's most recent valid play and prints it in the discord channel
-func CmdRecentPlay(bot *eb.Bot, m *discordgo.MessageCreate) {
-	user, err := bot.Users.GetRegisteredUser(m.GuildID, m.Author.ID)
+func CmdRecentPlay(bot *eb.Bot, m *discordgo.MessageCreate, args []string) {
+	var err error
+	var user *model.EtternaUser
+
+	if len(args) == 1 {
+		user, err = bot.Users.GetRegisteredUser(m.GuildID, m.Author.ID)
+	} else if len(args) > 1 {
+		user, err = getUserOrCreate(bot, args[1])
+	}
 
 	if err != nil {
 		bot.Session.ChannelMessageSend(m.ChannelID, err.Error())

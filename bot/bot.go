@@ -101,7 +101,7 @@ func messageCreate(bot *eb.Bot, m *discordgo.MessageCreate) {
 	case "unregister":
 		CmdUnregisterUser(bot, m)
 	case "recent":
-		CmdRecentPlay(bot, m)
+		CmdRecentPlay(bot, m, cmdParts)
 	case "here":
 		CmdSetScoresChannel(bot, server, m)
 	default:

@@ -44,9 +44,10 @@ func (s DiscordServerService) Save(server *model.DiscordServer) error {
 			updated_at,
 			command_prefix,
 			server_id,
-			score_channel_id
+			score_channel_id,
+			last_score_key
 		)
-		VALUES ($1, $2, $3, $4, $5)
+		VALUES ($1, $2, $3, $4, $5, $6)
 		RETURNING id`
 
 		err = s.db.Get(&server.ID, q,
@@ -55,12 +56,14 @@ func (s DiscordServerService) Save(server *model.DiscordServer) error {
 			server.CommandPrefix,
 			server.ServerID,
 			server.ScoreChannelID,
+			server.LastScoreKey,
 		)
 	} else {
 		q := `UPDATE "discord_servers" SET
 			updated_at=$2,
 			command_prefix=$3,
 			score_channel_id=$4
+			last_score_key=$5
 		WHERE server_id=$1`
 
 		_, err = s.db.Exec(q,
@@ -68,6 +71,7 @@ func (s DiscordServerService) Save(server *model.DiscordServer) error {
 			server.UpdatedAt,
 			server.CommandPrefix,
 			server.ScoreChannelID,
+			server.LastScoreKey,
 		)
 	}
 

@@ -1,4 +1,4 @@
-package commands
+package bot
 
 import (
 	"fmt"
@@ -9,10 +9,51 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
+// CmdRecentPlay gets a user's most recent valid play and prints it in the discord channel
+func CmdRecentPlay(bot *eb.Bot, m *discordgo.MessageCreate) {
+	user, err := bot.Users.GetRegisteredUser(m.GuildID, m.Author.ID)
+
+	if err != nil {
+		bot.Session.ChannelMessageSend(m.ChannelID, err.Error())
+		return
+	} else if user == nil {
+		bot.Session.ChannelMessageSend(m.ChannelID, "You are not registered with an Etterna user. "+
+			"Please register using the `setuser` command, or specify a user: recent <username>")
+	}
+
+	score, err := getRecentPlay(bot, user.EtternaID)
+
+	if err != nil {
+		bot.Session.ChannelMessageSend(m.ChannelID, err.Error())
+		return
+	}
+
+	embed, err := getPlaySummaryAsDiscordEmbed(bot, score, user)
+
+	if err != nil {
+		bot.Session.ChannelMessageSend(m.ChannelID, err.Error())
+		return
+	}
+
+	bot.Session.ChannelMessageSendEmbed(m.ChannelID, embed)
+}
+
+// CmdSetScoresChannel sets which discord channel the bot should post scores in
+// when tracking recent plays
+func CmdSetScoresChannel(bot *eb.Bot, server *model.DiscordServer, m *discordgo.MessageCreate) {
+	server.ScoreChannelID.String = m.ChannelID
+	server.ScoreChannelID.Valid = true
+
+	if err := bot.Servers.Save(server); err != nil {
+		bot.Session.ChannelMessageSend(m.ChannelID, err.Error())
+		return
+	}
+}
+
 // SetUser links a discord user with an etterna user. Only one discord user
 // can be linked to a given etterna user at a time in a server. Likewise, discord
 // users can only be linked to one etterna user at a time in a server.
-func SetUser(bot *eb.Bot, m *discordgo.MessageCreate, args []string) {
+func CmdSetUser(bot *eb.Bot, m *discordgo.MessageCreate, args []string) {
 	if len(args) < 2 {
 		bot.Session.ChannelMessageSend(m.ChannelID,
 			"Usage: setuser <username>")
@@ -79,38 +120,20 @@ func SetUser(bot *eb.Bot, m *discordgo.MessageCreate, args []string) {
 	}
 }
 
-// getUserOrCreate returns the etterna user with the given username, inserting the user into the
-// database automatically if they don't already exist
-func getUserOrCreate(bot *eb.Bot, username string) (*model.EtternaUser, error) {
-	etternaUser, err := bot.API.GetByUsername(username)
+// CmdUnregisterUser unregisters the given discord user from an etterna user
+func CmdUnregisterUser(bot *eb.Bot, m *discordgo.MessageCreate) {
+	ok, err := bot.Users.Unregister(m.GuildID, m.Author.ID)
 
 	if err != nil {
-		return nil, err
+		bot.Session.ChannelMessageSend(m.ChannelID, err.Error())
+		return
 	}
 
-	id, err := bot.API.GetUserID(username)
-
-	if err != nil {
-		return nil, err
+	if ok {
+		bot.Session.ChannelMessageSend(m.ChannelID,
+			"Success! You are no longer registered. Use the setuser command to register "+
+				"as another user.")
+	} else {
+		bot.Session.ChannelMessageSend(m.ChannelID, "You are not registered to an etterna user.")
 	}
-
-	user := &model.EtternaUser{
-		Username:      etternaUser.Username,
-		EtternaID:     id,
-		Avatar:        etternaUser.AvatarURL,
-		MSDOverall:    etternaUser.MSD.Overall,
-		MSDStream:     etternaUser.MSD.Stream,
-		MSDJumpstream: etternaUser.MSD.Jumpstream,
-		MSDHandstream: etternaUser.MSD.Handstream,
-		MSDStamina:    etternaUser.MSD.Stamina,
-		MSDJackSpeed:  etternaUser.MSD.JackSpeed,
-		MSDChordjack:  etternaUser.MSD.Chordjack,
-		MSDTechnical:  etternaUser.MSD.Technical,
-	}
-
-	if err := bot.Users.Save(user); err != nil {
-		return nil, err
-	}
-
-	return user, nil
 }

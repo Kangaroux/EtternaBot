@@ -6,7 +6,6 @@ import (
 	"time"
 
 	eb "github.com/Kangaroux/etternabot"
-	"github.com/Kangaroux/etternabot/bot/commands"
 	"github.com/Kangaroux/etternabot/etterna"
 	"github.com/Kangaroux/etternabot/model"
 	"github.com/Kangaroux/etternabot/model/service"
@@ -16,8 +15,8 @@ import (
 
 const (
 	defaultPrefix           = ";"             // Prefix for commands
-	defaultRecentPlayMinAcc = 97.0            // Minimum acc to display a recent play
-	recentPlayInterval      = 1 * time.Minute // How often to check for recent plays
+	defaultRecentPlayMinAcc = 99.0            // Minimum acc to display a recent play
+	recentPlayInterval      = 2 * time.Minute // How often to check for recent plays
 )
 
 func New(s *discordgo.Session, db *sqlx.DB, etternaAPIKey string) eb.Bot {
@@ -37,12 +36,12 @@ func New(s *discordgo.Session, db *sqlx.DB, etternaAPIKey string) eb.Bot {
 		messageCreate(&bot, m)
 	})
 
-	// s.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
-	// 	go func() {
-	// 		commands.TrackRecentPlays(&bot, defaultRecentPlayMinAcc)
-	// 		<-time.After(recentPlayInterval)
-	// 	}()
-	// })
+	s.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
+		go func() {
+			TrackAllRecentPlays(&bot, defaultRecentPlayMinAcc)
+			<-time.After(recentPlayInterval)
+		}()
+	})
 
 	return bot
 }
@@ -98,13 +97,13 @@ func messageCreate(bot *eb.Bot, m *discordgo.MessageCreate) {
 
 	switch cmdParts[0] {
 	case "setuser":
-		commands.SetUser(bot, m, cmdParts)
+		CmdSetUser(bot, m, cmdParts)
 	case "unregister":
-		commands.UnregisterUser(bot, m)
-	// case "track":
-	// 	bot.trackRecentPlays()
+		CmdUnregisterUser(bot, m)
+	case "recent":
+		CmdRecentPlay(bot, m)
 	case "here":
-		commands.SetScoresChannel(bot, server, m)
+		CmdSetScoresChannel(bot, server, m)
 	default:
 		bot.Session.ChannelMessageSend(m.ChannelID, fmt.Sprintf("Unrecognized command '%s'.", cmdParts[0]))
 	}

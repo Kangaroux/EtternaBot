@@ -94,12 +94,14 @@ func messageCreate(bot *eb.Bot, m *discordgo.MessageCreate) {
 	}
 
 	switch cmdParts[0] {
-	case "setuser":
-		CmdSetUser(bot, m, cmdParts)
-	case "unregister":
-		CmdUnregisterUser(bot, m)
+	case "help":
+		CmdHelp(bot, m)
 	case "recent":
 		CmdRecentPlay(bot, m, cmdParts)
+	case "setuser":
+		CmdSetUser(bot, m, cmdParts)
+	case "unset":
+		CmdUnsetUser(bot, m)
 	case "here":
 		CmdSetScoresChannel(bot, server, m)
 	default:

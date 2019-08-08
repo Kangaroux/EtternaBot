@@ -9,6 +9,21 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
+// CmdHelp prints some help text for the user
+func CmdHelp(bot *eb.Bot, m *discordgo.MessageCreate) {
+	bot.Session.ChannelMessageSend(m.ChannelID,
+		"I'm a bot for tracking Etterna plays. https://etternaonline.com\n\n"+
+			"Commands:\n\n"+
+			"**help**\n"+
+			"Shows this help text. Cool.\n\n"+
+			"**recent [username]**\n"+
+			"Gets a summary of your latest play, or the play of the player you provide.\n\n"+
+			"**setuser <username>**\n"+
+			"Links an etterna user to you. This will cause your recent plays to be tracked automatically.\n\n"+
+			"**unset**\n"+
+			"Unlinks you from any etterna users. Your recent plays will no longer be tracked.")
+}
+
 // CmdRecentPlay gets a user's most recent valid play and prints it in the discord channel
 func CmdRecentPlay(bot *eb.Bot, m *discordgo.MessageCreate, args []string) {
 	var err error
@@ -95,7 +110,7 @@ func CmdSetUser(bot *eb.Bot, m *discordgo.MessageCreate, args []string) {
 
 	if user != nil {
 		bot.Session.ChannelMessageSend(m.ChannelID,
-			"You are already registered as another user. Use the 'unregister' "+
+			"You are already registered as another user. Use the 'unset' "+
 				"command first and try again.")
 		return
 	}
@@ -119,7 +134,7 @@ func CmdSetUser(bot *eb.Bot, m *discordgo.MessageCreate, args []string) {
 	if !ok {
 		// This can only happen due to a data race, still worth checking though
 		bot.Session.ChannelMessageSend(m.ChannelID,
-			"You are currently registered as another user. Use the 'unregister' command "+
+			"You are currently registered as another user. Use the 'unset' command "+
 				"first and try again.")
 	} else {
 		bot.Session.ChannelMessageSend(m.ChannelID,
@@ -127,8 +142,8 @@ func CmdSetUser(bot *eb.Bot, m *discordgo.MessageCreate, args []string) {
 	}
 }
 
-// CmdUnregisterUser unregisters the given discord user from an etterna user
-func CmdUnregisterUser(bot *eb.Bot, m *discordgo.MessageCreate) {
+// CmdUnsetUser unregisters the given discord user from an etterna user
+func CmdUnsetUser(bot *eb.Bot, m *discordgo.MessageCreate) {
 	ok, err := bot.Users.Unregister(m.GuildID, m.Author.ID)
 
 	if err != nil {

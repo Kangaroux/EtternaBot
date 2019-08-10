@@ -12,13 +12,13 @@ build:
 	docker-compose build bot
 
 psql:
-	docker-compose exec db psql
+	docker-compose exec db psql -U etterna
 
 stop:
 	docker-compose stop
 
 testdb:
-	docker-compose -f docker-compose-test.yml up db-test
+	docker-compose -f docker-compose-test.yml up -d db-test
 
 # Starts the test database and runs the go tests using the test db. The test db is reset
 # when this is ran. Use `make testdb` to start up the test db without destroying the

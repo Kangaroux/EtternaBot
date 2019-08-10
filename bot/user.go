@@ -8,6 +8,14 @@ import (
 // getUserOrCreate returns the etterna user with the given username, inserting the user into the
 // database automatically if they don't already exist
 func getUserOrCreate(bot *eb.Bot, username string) (*model.EtternaUser, error) {
+	user, err := bot.Users.GetUsername(username)
+
+	if err != nil {
+		return nil, err
+	} else if user != nil {
+		return user, nil
+	}
+
 	etternaUser, err := bot.API.GetByUsername(username)
 
 	if err != nil {
@@ -20,7 +28,7 @@ func getUserOrCreate(bot *eb.Bot, username string) (*model.EtternaUser, error) {
 		return nil, err
 	}
 
-	user := &model.EtternaUser{
+	user = &model.EtternaUser{
 		Username:      etternaUser.Username,
 		EtternaID:     id,
 		Avatar:        etternaUser.AvatarURL,

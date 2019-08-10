@@ -10,18 +10,21 @@ import (
 )
 
 // CmdHelp prints some help text for the user
-func CmdHelp(bot *eb.Bot, m *discordgo.MessageCreate) {
+func CmdHelp(bot *eb.Bot, server *model.DiscordServer, m *discordgo.MessageCreate) {
+	p := server.CommandPrefix
+
 	bot.Session.ChannelMessageSend(m.ChannelID,
 		"I'm a bot for tracking Etterna plays. https://etternaonline.com\n\n"+
-			"Commands:\n\n"+
+			"For commands, use this prefix: `"+p+"`\n\n"+
+			"Command list:\n\n"+
 			"**help**\n"+
-			"Shows this help text. Cool.\n\n"+
+			"\tShows this help text. Cool.\n\n"+
 			"**recent [username]**\n"+
-			"Gets a summary of your latest play, or the play of the player you provide.\n\n"+
+			"\tGets a summary of your latest play, or the play of the player you provide.\n\n"+
 			"**setuser <username>**\n"+
-			"Links an etterna user to you. This will cause your recent plays to be tracked automatically.\n\n"+
+			"\tLinks an etterna user to you. This will cause your recent plays to be tracked automatically.\n\n"+
 			"**unset**\n"+
-			"Unlinks you from any etterna users. Your recent plays will no longer be tracked.")
+			"\tUnlinks you from any etterna users. Your recent plays will no longer be tracked.")
 }
 
 // CmdRecentPlay gets a user's most recent valid play and prints it in the discord channel

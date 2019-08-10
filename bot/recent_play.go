@@ -55,7 +55,7 @@ func getPlaySummaryAsDiscordEmbed(bot *eb.Bot, score *etterna.Score, user *model
 	song, err := bot.API.GetSong(score.Song.ID)
 
 	if err != nil {
-		fmt.Println("Failed to get song details", song.ID, err)
+		fmt.Println("Failed to get song details", score.Song.ID, err)
 		return nil, err
 	}
 

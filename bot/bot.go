@@ -89,7 +89,7 @@ func messageCreate(bot *eb.Bot, m *discordgo.MessageCreate) {
 		return
 	}
 
-	cmdParts := strings.SplitN(m.Message.Content[len(server.CommandPrefix):], " ", 2)
+	cmdParts := strings.Split(m.Message.Content[len(server.CommandPrefix):], " ")
 
 	if cmdParts[0] == "" {
 		return
@@ -106,6 +106,8 @@ func messageCreate(bot *eb.Bot, m *discordgo.MessageCreate) {
 		CmdSetUser(bot, m, cmdParts)
 	case "unset":
 		CmdUnsetUser(bot, m)
+	case "vs":
+		CmdVersus(bot, m, cmdParts)
 	case "here":
 		CmdSetScoresChannel(bot, server, m)
 	default:

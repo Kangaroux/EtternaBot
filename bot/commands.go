@@ -19,12 +19,16 @@ func CmdHelp(bot *eb.Bot, server *model.DiscordServer, m *discordgo.MessageCreat
 			"Command list:\n\n"+
 			"**help**\n"+
 			"\tShows this help text. Cool.\n\n"+
+			"**profile**\n"+
+			"\tGets a summary of your current ranks and ratings.\n\n"+
 			"**recent [username]**\n"+
 			"\tGets a summary of your latest play, or the play of the player you provide.\n\n"+
 			"**setuser <username>**\n"+
 			"\tLinks an etterna user to you. This will cause your recent plays to be tracked automatically.\n\n"+
 			"**unset**\n"+
-			"\tUnlinks you from any etterna users. Your recent plays will no longer be tracked.")
+			"\tUnlinks you from any etterna users. Your recent plays will no longer be tracked.\n\n"+
+			"**vs <username> [username]**\n"+
+			"\tCompares two user's profiles. Uses your profile if you only give one username.")
 }
 
 func CmdProfile(bot *eb.Bot, m *discordgo.MessageCreate, args []string) {
@@ -34,7 +38,7 @@ func CmdProfile(bot *eb.Bot, m *discordgo.MessageCreate, args []string) {
 	if len(args) == 1 {
 		user, err = bot.Users.GetRegisteredUser(m.GuildID, m.Author.ID)
 	} else if len(args) > 1 {
-		user, err = getUserOrCreate(bot, args[1])
+		user, err = getUserOrCreate(bot, args[1], true)
 	}
 
 	if err != nil {
@@ -45,15 +49,8 @@ func CmdProfile(bot *eb.Bot, m *discordgo.MessageCreate, args []string) {
 			"Please register using the `setuser` command, or specify a user: recent <username>")
 	}
 
-	// Get the latest ranks and ratings for the user
-	if err := getLatestUserInfo(bot, user); err != nil {
-		bot.Session.ChannelMessageSend(m.ChannelID, err.Error())
-		return
-	}
+	var description string
 
-	bot.Users.Save(user)
-
-	description := "\n"
 	description += fmt.Sprintf("➤ **Overall:** %.2f (#%d)\n", user.MSDOverall, user.RankOverall)
 	description += fmt.Sprintf("➤ **Stream:** %.2f (#%d)\n", user.MSDStream, user.RankStream)
 	description += fmt.Sprintf("➤ **Jumpstream:** %.2f (#%d)\n", user.MSDJumpstream, user.RankJumpstream)
@@ -91,7 +88,7 @@ func CmdRecentPlay(bot *eb.Bot, m *discordgo.MessageCreate, args []string) {
 	if len(args) == 1 {
 		user, err = bot.Users.GetRegisteredUser(m.GuildID, m.Author.ID)
 	} else if len(args) > 1 {
-		user, err = getUserOrCreate(bot, args[1])
+		user, err = getUserOrCreate(bot, args[1], false)
 	}
 
 	if err != nil {
@@ -176,7 +173,7 @@ func CmdSetUser(bot *eb.Bot, m *discordgo.MessageCreate, args []string) {
 
 	// The discord user is not associated with any etterna users, look up
 	// the etterna user with that username
-	user, err = getUserOrCreate(bot, username)
+	user, err = getUserOrCreate(bot, username, false)
 
 	if err != nil {
 		bot.Session.ChannelMessageSend(m.ChannelID, err.Error())
@@ -216,5 +213,97 @@ func CmdUnsetUser(bot *eb.Bot, m *discordgo.MessageCreate) {
 				"as another user.")
 	} else {
 		bot.Session.ChannelMessageSend(m.ChannelID, "You are not registered to an etterna user.")
+	}
+}
+
+// CmdVersus compares the profiles of two users
+func CmdVersus(bot *eb.Bot, m *discordgo.MessageCreate, args []string) {
+	var err error
+	var user1, user2 *model.EtternaUser
+
+	if len(args) == 1 {
+		bot.Session.ChannelMessageSend(m.ChannelID,
+			"Usage: vs <username> [username]")
+		return
+	}
+
+	if len(args) == 2 {
+		user1, err = bot.Users.GetRegisteredUser(m.GuildID, m.Author.ID)
+
+		if err != nil {
+			bot.Session.ChannelMessageSend(m.ChannelID, err.Error())
+			return
+		}
+
+		user2, err = getUserOrCreate(bot, args[1], true)
+
+		if err != nil {
+			bot.Session.ChannelMessageSend(m.ChannelID, err.Error())
+			return
+		}
+	} else {
+		user1, err = getUserOrCreate(bot, args[1], true)
+
+		if err != nil {
+			bot.Session.ChannelMessageSend(m.ChannelID, err.Error())
+			return
+		}
+
+		user2, err = getUserOrCreate(bot, args[2], true)
+
+		if err != nil {
+			bot.Session.ChannelMessageSend(m.ChannelID, err.Error())
+			return
+		}
+	}
+
+	var description string
+
+	description += fmt.Sprintf("Overall:     %5.2f  %c  %5.2f  (%+.2f)\n", user1.MSDOverall,
+		getEqualitySign(user1.MSDOverall, user2.MSDOverall), user2.MSDOverall, user1.MSDOverall-user2.MSDOverall)
+
+	description += fmt.Sprintf("Stream:      %5.2f  %c  %5.2f  (%+.2f)\n", user1.MSDStream,
+		getEqualitySign(user1.MSDStream, user2.MSDStream), user2.MSDStream, user1.MSDStream-user2.MSDStream)
+
+	description += fmt.Sprintf("Jumpstream:  %5.2f  %c  %5.2f  (%+.2f)\n", user1.MSDJumpstream,
+		getEqualitySign(user1.MSDJumpstream, user2.MSDJumpstream), user2.MSDJumpstream, user1.MSDJumpstream-user2.MSDJumpstream)
+
+	description += fmt.Sprintf("Handstream:  %5.2f  %c  %5.2f  (%+.2f)\n", user1.MSDHandstream,
+		getEqualitySign(user1.MSDHandstream, user2.MSDHandstream), user2.MSDHandstream, user1.MSDHandstream-user2.MSDHandstream)
+
+	description += fmt.Sprintf("Stamina:     %5.2f  %c  %5.2f  (%+.2f)\n", user1.MSDStamina,
+		getEqualitySign(user1.MSDStamina, user2.MSDStamina), user2.MSDStamina, user1.MSDStamina-user2.MSDStamina)
+
+	description += fmt.Sprintf("JackSpeed:   %5.2f  %c  %5.2f  (%+.2f)\n", user1.MSDJackSpeed,
+		getEqualitySign(user1.MSDJackSpeed, user2.MSDJackSpeed), user2.MSDJackSpeed, user1.MSDJackSpeed-user2.MSDJackSpeed)
+
+	description += fmt.Sprintf("Chordjack:   %5.2f  %c  %5.2f  (%+.2f)\n", user1.MSDChordjack,
+		getEqualitySign(user1.MSDChordjack, user2.MSDChordjack), user2.MSDChordjack, user1.MSDChordjack-user2.MSDChordjack)
+
+	description += fmt.Sprintf("Technical:   %5.2f  %c  %5.2f  (%+.2f)\n", user1.MSDTechnical,
+		getEqualitySign(user1.MSDTechnical, user2.MSDTechnical), user2.MSDTechnical, user1.MSDTechnical-user2.MSDTechnical)
+
+	embed := &discordgo.MessageEmbed{
+		Description: "```\n" + description + "\n```",
+		Color:       embedColor,
+		Author: &discordgo.MessageEmbedAuthor{
+			IconURL: "https://i.imgur.com/HwIkGCk.png",
+			Name:    user1.Username + " vs. " + user2.Username,
+		},
+		Thumbnail: &discordgo.MessageEmbedThumbnail{
+			URL: "https://i.imgur.com/AkfAZtJ.png",
+		},
+	}
+
+	bot.Session.ChannelMessageSendEmbed(m.ChannelID, embed)
+}
+
+func getEqualitySign(a, b float64) rune {
+	if a > b {
+		return '>'
+	} else if a < b {
+		return '<'
+	} else {
+		return '='
 	}
 }

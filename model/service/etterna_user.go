@@ -26,7 +26,7 @@ func (s EtternaUserService) GetRegisteredDiscordUserID(serverID, username string
 
 	query := `
 		SELECT discord_user_id FROM "users_discord_servers"
-		WHERE server_id=$1 AND username=lower($2)
+		WHERE server_id=$1 AND lower(username)=lower($2)
 	`
 
 	if err := s.db.Get(&discordID, query, serverID, username); err != nil {
@@ -68,7 +68,7 @@ func (s EtternaUserService) GetRegisteredUser(serverID, discordID string) (*mode
 func (s EtternaUserService) GetUsername(username string) (*model.EtternaUser, error) {
 	user := &model.EtternaUser{}
 
-	if err := s.db.Get(user, `SELECT * FROM "etterna_users" WHERE username=lower($1)`, username); err != nil {
+	if err := s.db.Get(user, `SELECT * FROM "etterna_users" WHERE lower(username)=lower($1)`, username); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
 		}
@@ -202,7 +202,7 @@ func (s EtternaUserService) Save(user *model.EtternaUser) error {
 			msd_jackspeed=$10,
 			msd_chordjack=$11,
 			msd_technical=$12
-		WHERE username=lower($1)`
+		WHERE lower(username)=lower($1)`
 
 		_, err = s.db.Exec(q,
 			user.Username,

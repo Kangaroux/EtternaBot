@@ -18,8 +18,5 @@ func GetEqualitySign(a, b float64) rune {
 // TruncateFloat drops any decimals beyond "precision"
 func TruncateFloat(num float64, precision int) float64 {
 	pow := math.Pow(10, float64(precision))
-	newNum := num * pow
-	newNum = math.Floor(newNum)
-
-	return newNum / pow
+	return math.Floor(num*pow) / pow
 }

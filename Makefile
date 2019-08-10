@@ -25,7 +25,3 @@ testdb:
 # volume to inspect data after a test
 test:
 	docker-compose -f docker-compose-test.yml up -V --build --exit-code-from bot-test
-
-# Runs migrations on the production database
-migrations:
-	docker-compose run bot ./migrate.sh

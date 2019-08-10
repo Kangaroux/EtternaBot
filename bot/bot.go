@@ -113,7 +113,9 @@ func ready(bot *eb.Bot, r *discordgo.Ready) {
 	bot.Session.UpdateStatus(0, ";help")
 
 	go func() {
-		TrackAllRecentPlays(bot, defaultRecentPlayMinAcc)
-		<-time.After(recentPlayInterval)
+		for {
+			TrackAllRecentPlays(bot, defaultRecentPlayMinAcc)
+			<-time.After(recentPlayInterval)
+		}
 	}()
 }

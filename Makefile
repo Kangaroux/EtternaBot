@@ -3,7 +3,7 @@
 default: db bot
 
 bot:
-	docker-compose up -d bot
+	docker-compose up bot
 
 db:
 	docker-compose up -d db

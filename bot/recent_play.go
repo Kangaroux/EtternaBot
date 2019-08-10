@@ -23,31 +23,24 @@ func getRecentPlay(bot *eb.Bot, etternaID int) (*etterna.Score, error) {
 		return nil, err
 	}
 
-	var s *etterna.Score
-
-	for _, v := range scores {
-		// Invalid scores have an overall rating of 0
-		if v.Overall == 0.0 {
-			continue
-		}
-
-		s = &v
-		break
-	}
-
 	// User has no recent, valid scores
-	if s == nil {
+	if len(scores) == 0 {
 		return nil, nil
 	}
 
-	score, err := bot.API.GetScoreDetail(s.Key)
+	s := scores[0]
+	details, err := bot.API.GetScoreDetail(s.Key)
 
 	if err != nil {
 		fmt.Println("Failed to look up score", s.Key, err)
 		return nil, err
 	}
 
-	return score, nil
+	s.MaxCombo = details.MaxCombo
+	s.MinesHit = details.MinesHit
+	s.Mods = details.Mods
+
+	return &s, nil
 }
 
 // getPlaySummaryAsDiscordEmbed returns a discord embed object for displaying the score
@@ -68,7 +61,7 @@ func getPlaySummaryAsDiscordEmbed(bot *eb.Bot, score *etterna.Score, user *model
 		rateStr = rateStr[:length-1]
 	}
 
-	scoreURL := fmt.Sprintf(bot.API.BaseURL()+"score/view/%s%d", score.Key, user.EtternaID)
+	scoreURL := fmt.Sprintf(bot.API.BaseURL()+"/score/view/%s%d", score.Key, user.EtternaID)
 	description := fmt.Sprintf(
 		"**[%s (%sx)](%s)**\n\n"+
 			"➤ **Acc:** %.2f%% @ %sx\n"+
@@ -94,7 +87,7 @@ func getPlaySummaryAsDiscordEmbed(bot *eb.Bot, score *etterna.Score, user *model
 		URL: scoreURL,
 		Author: &discordgo.MessageEmbedAuthor{
 			Name:    "Recent play by " + user.Username,
-			IconURL: bot.API.BaseURL() + "avatars/" + user.Avatar,
+			IconURL: bot.API.BaseURL() + "/avatars/" + user.Avatar,
 		},
 		Color:       8519899,
 		Description: description,
@@ -104,7 +97,7 @@ func getPlaySummaryAsDiscordEmbed(bot *eb.Bot, score *etterna.Score, user *model
 			Text:    user.Username,
 		},
 		Thumbnail: &discordgo.MessageEmbedThumbnail{
-			URL: bot.API.BaseURL() + "song_images/bg/" + score.Song.BackgroundURL,
+			URL: bot.API.BaseURL() + "/song_images/bg/" + score.Song.BackgroundURL,
 		},
 	}
 

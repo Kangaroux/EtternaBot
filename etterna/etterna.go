@@ -46,10 +46,31 @@ var (
 // Payload received from the userScores endpoint
 type scorePayload struct {
 	SongName  string
-	Rate      string `json:"user_chart_rate_rate"`
-	Nerf      float64
+	Rate      string      `json:"user_chart_rate_rate"`
+	Nerf      interface{} // This is a float64 except when the score is invalid then it's a string ???
 	ScoreKey  string
 	Date      string `json:"datetime"`
+	WifeScore string
+
+	Overall    string
+	Stream     string
+	Jumpstream string
+	Handstream string
+	Stamina    string
+	JackSpeed  string
+	Chordjack  string
+	Technical  string
+}
+
+// Payload received from the API score endpoint
+type scoreDetailPayload struct {
+	Date      string `json:"datetime"`
+	MaxCombo  string
+	MinesHit  string `json:"hitmine"`
+	Modifiers string
+	Rate      string `json:"user_chart_rate_rate"`
+	ScoreKey  string
+	Valid     string
 	WifeScore string
 
 	Overall    string
@@ -210,7 +231,7 @@ func (api *EtternaAPI) GetUserID(username string) (int, error) {
 	return id, nil
 }
 
-// GetScores returns a list of scores for a given user.
+// GetScores returns a list of valid scores for a given user.
 func (api *EtternaAPI) GetScores(userID int, n uint, start uint, sortColumn SortColumn, sortAsc bool) ([]Score, error) {
 	var payload struct {
 		Data []scorePayload
@@ -237,7 +258,7 @@ func (api *EtternaAPI) GetScores(userID int, n uint, start uint, sortColumn Sort
 		return nil, &Error{
 			Code:    ErrUnexpected,
 			Context: err,
-			Msg:     "Unexpected error trying to retreive scores",
+			Msg:     "Unexpected error trying to retrieve scores",
 		}
 	}
 
@@ -255,7 +276,7 @@ func (api *EtternaAPI) GetScores(userID int, n uint, start uint, sortColumn Sort
 		return nil, &Error{
 			Code:    ErrUnexpected,
 			Context: err,
-			Msg:     "Unexpected error trying to retreive scores",
+			Msg:     "Unexpected error trying to retrieve scores",
 		}
 	}
 
@@ -263,20 +284,24 @@ func (api *EtternaAPI) GetScores(userID int, n uint, start uint, sortColumn Sort
 		return nil, &Error{
 			Code:    ErrUnexpected,
 			Context: err,
-			Msg:     "Unexpected error trying to retreive scores",
+			Msg:     "Unexpected error trying to retrieve scores",
 		}
 	}
 
 	scores := []Score{}
 
 	for _, payload := range payload.Data {
+		if payload.Nerf == "0" {
+			continue
+		}
+
 		score, err := parseScorePayload(payload)
 
 		if err != nil {
 			return nil, &Error{
 				Code:    ErrUnexpected,
 				Context: err,
-				Msg:     "Unexpected error trying to retreive scores",
+				Msg:     "Unexpected error trying to retrieve scores",
 			}
 		}
 
@@ -288,14 +313,7 @@ func (api *EtternaAPI) GetScores(userID int, n uint, start uint, sortColumn Sort
 
 // GetScoreDetail gets the full details of a song (except for the nerf rating, ty rop)
 func (api *EtternaAPI) GetScoreDetail(scoreKey string) (*Score, error) {
-	var payload []struct {
-		scorePayload
-		MaxCombo  string
-		Valid     string
-		Modifiers string
-		DateTime  string
-		MinesHit  string `json:"hitmine"`
-	}
+	var payload []scoreDetailPayload
 
 	reqURL := fmt.Sprintf(api.baseAPIURL+"/score?api_key=%s&key=%s", api.apiKey, scoreKey[:41])
 	resp, err := http.PostForm(reqURL, url.Values{})
@@ -304,7 +322,7 @@ func (api *EtternaAPI) GetScoreDetail(scoreKey string) (*Score, error) {
 		return nil, &Error{
 			Code:    ErrUnexpected,
 			Context: err,
-			Msg:     "Unexpected error trying to retreive score details",
+			Msg:     "Unexpected error trying to retrieve score details",
 		}
 	}
 
@@ -322,7 +340,7 @@ func (api *EtternaAPI) GetScoreDetail(scoreKey string) (*Score, error) {
 		return nil, &Error{
 			Code:    ErrUnexpected,
 			Context: err,
-			Msg:     "Unexpected error trying to retreive score details",
+			Msg:     "Unexpected error trying to retrieve score details",
 		}
 	}
 
@@ -330,7 +348,7 @@ func (api *EtternaAPI) GetScoreDetail(scoreKey string) (*Score, error) {
 		return nil, &Error{
 			Code:    ErrUnexpected,
 			Context: err,
-			Msg:     "Unexpected error trying to retreive score details",
+			Msg:     "Unexpected error trying to retrieve score details",
 		}
 	}
 
@@ -348,7 +366,7 @@ func (api *EtternaAPI) GetScoreDetail(scoreKey string) (*Score, error) {
 	score.Technical, _ = strconv.ParseFloat(p.Technical, 64)
 	score.MaxCombo, _ = strconv.Atoi(p.MaxCombo)
 	score.Valid = p.Valid == "1"
-	score.Date, _ = time.Parse("2006-01-02 15:04:05", p.DateTime)
+	score.Date, _ = time.Parse("2006-01-02 15:04:05", p.Date)
 	score.Mods = p.Modifiers
 	score.MinesHit, _ = strconv.Atoi(p.MinesHit)
 
@@ -372,7 +390,7 @@ func (api *EtternaAPI) GetSong(id int) (*Song, error) {
 		return nil, &Error{
 			Code:    ErrUnexpected,
 			Context: err,
-			Msg:     "Unexpected error trying to retreive song details",
+			Msg:     "Unexpected error trying to retrieve song details",
 		}
 	}
 
@@ -390,7 +408,7 @@ func (api *EtternaAPI) GetSong(id int) (*Song, error) {
 		return nil, &Error{
 			Code:    ErrUnexpected,
 			Context: err,
-			Msg:     "Unexpected error trying to retreive song details",
+			Msg:     "Unexpected error trying to retrieve song details",
 		}
 	}
 
@@ -398,19 +416,18 @@ func (api *EtternaAPI) GetSong(id int) (*Song, error) {
 		return nil, &Error{
 			Code:    ErrUnexpected,
 			Context: err,
-			Msg:     "Unexpected error trying to retreive song details",
+			Msg:     "Unexpected error trying to retrieve song details",
 		}
 	}
 
 	song := Song{
+		ID:            id,
 		Name:          payload[0].SongName,
 		Author:        payload[0].Author,
 		Artist:        payload[0].Artist,
 		BackgroundURL: payload[0].Background,
 		Key:           payload[0].SongKey,
 	}
-
-	song.ID, _ = strconv.Atoi(payload[0].ID)
 
 	return &song, nil
 }
@@ -426,7 +443,11 @@ func parseScorePayload(payload scorePayload) (*Score, error) {
 		return nil, err
 	}
 
-	score.Nerfed = payload.Nerf
+	// If the score is invalid the nerf value will be "0" otherwise it's a float, epic
+	if val, ok := payload.Nerf.(float64); ok {
+		score.Nerfed = val
+	}
+
 	score.Rate, _ = strconv.ParseFloat(payload.Rate, 64)
 	score.Key = payload.ScoreKey
 	score.Date, _ = time.Parse("2006-01-02", payload.Date)

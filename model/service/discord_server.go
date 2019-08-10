@@ -12,7 +12,6 @@ type DiscordServerService struct {
 	db *sqlx.DB
 }
 
-// NewDiscordServerService returns a service for managing users in the database
 func NewDiscordServerService(db *sqlx.DB) DiscordServerService {
 	return DiscordServerService{db: db}
 }

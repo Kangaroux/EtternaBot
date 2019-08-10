@@ -423,7 +423,6 @@ func (api *EtternaAPI) GetSong(id int) (*Song, error) {
 	song := Song{
 		ID:            id,
 		Name:          payload[0].SongName,
-		Author:        payload[0].Author,
 		Artist:        payload[0].Artist,
 		BackgroundURL: payload[0].Background,
 		Key:           payload[0].SongKey,

@@ -37,7 +37,6 @@ type MSD struct {
 type Song struct {
 	ID            int
 	Name          string
-	Author        string
 	Artist        string
 	BackgroundURL string
 	Key           string

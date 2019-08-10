@@ -12,6 +12,7 @@ type Bot struct {
 	API     etterna.EtternaAPI
 	Session *discordgo.Session
 	Servers model.DiscordServerServicer
+	Songs   model.SongServicer
 	Users   model.EtternaUserServicer
 }
 

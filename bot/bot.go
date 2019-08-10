@@ -26,6 +26,7 @@ func New(s *discordgo.Session, db *sqlx.DB, etternaAPIKey string) eb.Bot {
 		API:     etterna.New(etternaAPIKey),
 		Session: s,
 		Servers: service.NewDiscordServerService(db),
+		Songs:   service.NewSongService(db),
 		Users:   service.NewUserService(db),
 	}
 

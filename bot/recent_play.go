@@ -45,14 +45,16 @@ func getRecentPlay(bot *eb.Bot, etternaID int) (*etterna.Score, error) {
 
 // getPlaySummaryAsDiscordEmbed returns a discord embed object for displaying the score
 func getPlaySummaryAsDiscordEmbed(bot *eb.Bot, score *etterna.Score, user *model.EtternaUser) (*discordgo.MessageEmbed, error) {
-	song, err := bot.API.GetSong(score.Song.ID)
+	song, err := getSongOrCreate(bot, score.Song.ID)
 
 	if err != nil {
 		fmt.Println("Failed to get song details", score.Song.ID, err)
 		return nil, err
 	}
 
-	score.Song = *song
+	score.Song.Name = song.Name
+	score.Song.Artist = song.Artist
+	score.Song.BackgroundURL = song.BackgroundURL
 	rateStr := fmt.Sprintf("%.2f", score.Rate)
 	length := len(rateStr)
 

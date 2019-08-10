@@ -1,15 +1,14 @@
 package model
 
 type SongServicer interface {
-	Get(id int) (*Song, error)
+	Get(etternaID int) (*Song, error)
 	Save(song *Song) error
 }
 
 type Song struct {
 	ID            int
-	Name          string
-	Author        string
+	EtternaID     int    `db:"etterna_id"`
+	BackgroundURL string `db:"background_url"`
 	Artist        string
-	BackgroundURL string
-	Key           string
+	Name          string
 }

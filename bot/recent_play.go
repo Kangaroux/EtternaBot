@@ -91,7 +91,7 @@ func getPlaySummaryAsDiscordEmbed(bot *eb.Bot, score *etterna.Score, user *model
 			Name:    "Recent play by " + user.Username,
 			IconURL: bot.API.BaseURL() + "/avatars/" + user.Avatar,
 		},
-		Color:       8519899,
+		Color:       embedColor,
 		Description: description,
 		Timestamp:   score.Date.Format(time.RFC3339),
 		Footer: &discordgo.MessageEmbedFooter{

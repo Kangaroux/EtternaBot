@@ -14,8 +14,9 @@ import (
 )
 
 const (
-	defaultPrefix           = ";"             // Prefix for commands
-	defaultRecentPlayMinAcc = 99.0            // Minimum acc to display a recent play
+	defaultPrefix           = ";"  // Prefix for commands
+	defaultRecentPlayMinAcc = 99.0 // Minimum acc to display a recent play
+	embedColor              = 8519899
 	recentPlayInterval      = 2 * time.Minute // How often to check for recent plays
 )
 
@@ -97,6 +98,8 @@ func messageCreate(bot *eb.Bot, m *discordgo.MessageCreate) {
 	switch cmdParts[0] {
 	case "help":
 		CmdHelp(bot, server, m)
+	case "profile":
+		CmdProfile(bot, m, cmdParts)
 	case "recent":
 		CmdRecentPlay(bot, m, cmdParts)
 	case "setuser":

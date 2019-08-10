@@ -180,6 +180,10 @@ func (api *EtternaAPI) GetByUsername(username string) (*User, error) {
 	u.Chordjack, _ = strconv.ParseFloat(payload.Chordjack, 64)
 	u.Technical, _ = strconv.ParseFloat(payload.Technical, 64)
 
+	if err := api.getUserRanks(&u); err != nil {
+		return nil, err
+	}
+
 	return &u, nil
 }
 
@@ -429,6 +433,72 @@ func (api *EtternaAPI) GetSong(id int) (*Song, error) {
 	}
 
 	return &song, nil
+}
+
+// getUserRanks gets the user's skillset rankings from the user_rank API
+func (api *EtternaAPI) getUserRanks(user *User) error {
+	var payload struct {
+		Overall    string
+		Stream     string
+		Jumpstream string
+		Handstream string
+		Stamina    string
+		JackSpeed  string
+		Chordjack  string
+		Technical  string
+	}
+
+	resp, err := http.Get(api.baseAPIURL + "/user_rank" +
+		fmt.Sprintf("?api_key=%s&username=%s", api.apiKey, user.Username))
+
+	if err != nil {
+		return &Error{
+			Code:    ErrUnexpected,
+			Context: err,
+			Msg:     "Unexpected error trying to look up user.",
+		}
+	}
+
+	if resp.StatusCode == http.StatusNotFound {
+		return &Error{
+			Code: ErrNotFound,
+			Msg:  "No user with that username exists.",
+		}
+	} else if resp.StatusCode == http.StatusForbidden {
+		return &Error{
+			Code: ErrUnexpected,
+			Msg:  "API access is denied due to insufficient permissions (bad API key?).",
+		}
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+
+	if err != nil {
+		return &Error{
+			Code:    ErrUnexpected,
+			Context: err,
+			Msg:     "Unexpected error trying to look up user.",
+		}
+	}
+
+	if err := json.Unmarshal(body, &payload); err != nil {
+		return &Error{
+			Code:    ErrUnexpected,
+			Context: err,
+			Msg:     "Unexpected error trying to look up user.",
+		}
+	}
+
+	user.Rank.Overall, _ = strconv.Atoi(payload.Overall)
+	user.Rank.Stream, _ = strconv.Atoi(payload.Stream)
+	user.Rank.Jumpstream, _ = strconv.Atoi(payload.Jumpstream)
+	user.Rank.Handstream, _ = strconv.Atoi(payload.Handstream)
+	user.Rank.Stamina, _ = strconv.Atoi(payload.Stamina)
+	user.Rank.JackSpeed, _ = strconv.Atoi(payload.JackSpeed)
+	user.Rank.Chordjack, _ = strconv.Atoi(payload.Chordjack)
+	user.Rank.Technical, _ = strconv.Atoi(payload.Technical)
+
+	return nil
 }
 
 func parseScorePayload(payload scorePayload) (*Score, error) {

@@ -27,6 +27,62 @@ func CmdHelp(bot *eb.Bot, server *model.DiscordServer, m *discordgo.MessageCreat
 			"\tUnlinks you from any etterna users. Your recent plays will no longer be tracked.")
 }
 
+func CmdProfile(bot *eb.Bot, m *discordgo.MessageCreate, args []string) {
+	var err error
+	var user *model.EtternaUser
+
+	if len(args) == 1 {
+		user, err = bot.Users.GetRegisteredUser(m.GuildID, m.Author.ID)
+	} else if len(args) > 1 {
+		user, err = getUserOrCreate(bot, args[1])
+	}
+
+	if err != nil {
+		bot.Session.ChannelMessageSend(m.ChannelID, err.Error())
+		return
+	} else if user == nil {
+		bot.Session.ChannelMessageSend(m.ChannelID, "You are not registered with an Etterna user. "+
+			"Please register using the `setuser` command, or specify a user: recent <username>")
+	}
+
+	// Get the latest ranks and ratings for the user
+	if err := getLatestUserInfo(bot, user); err != nil {
+		bot.Session.ChannelMessageSend(m.ChannelID, err.Error())
+		return
+	}
+
+	bot.Users.Save(user)
+
+	description := "\n"
+	description += fmt.Sprintf("➤ **Overall:** %.2f (#%d)\n", user.MSDOverall, user.RankOverall)
+	description += fmt.Sprintf("➤ **Stream:** %.2f (#%d)\n", user.MSDStream, user.RankStream)
+	description += fmt.Sprintf("➤ **Jumpstream:** %.2f (#%d)\n", user.MSDJumpstream, user.RankJumpstream)
+	description += fmt.Sprintf("➤ **Handstream:** %.2f (#%d)\n", user.MSDHandstream, user.RankHandstream)
+	description += fmt.Sprintf("➤ **Stamina:** %.2f (#%d)\n", user.MSDStamina, user.RankStamina)
+	description += fmt.Sprintf("➤ **JackSpeed:** %.2f (#%d)\n", user.MSDJackSpeed, user.RankJackSpeed)
+	description += fmt.Sprintf("➤ **Chordjack:** %.2f (#%d)\n", user.MSDChordjack, user.RankChordjack)
+	description += fmt.Sprintf("➤ **Technical:** %.2f (#%d)\n", user.MSDTechnical, user.RankTechnical)
+
+	profileURL := bot.API.BaseURL() + "/user/" + user.Username
+
+	embed := &discordgo.MessageEmbed{
+		Description: description,
+		Color:       embedColor,
+		Title:       "View profile",
+		URL:         profileURL,
+		Author: &discordgo.MessageEmbedAuthor{
+			IconURL: "https://i.imgur.com/HwIkGCk.png",
+			Name:    "EtternaOnline: " + user.Username,
+			URL:     profileURL,
+		},
+		Thumbnail: &discordgo.MessageEmbedThumbnail{
+			URL: bot.API.BaseURL() + "/avatars/" + user.Avatar,
+		},
+	}
+
+	bot.Session.ChannelMessageSendEmbed(m.ChannelID, embed)
+}
+
 // CmdRecentPlay gets a user's most recent valid play and prints it in the discord channel
 func CmdRecentPlay(bot *eb.Bot, m *discordgo.MessageCreate, args []string) {
 	var err error

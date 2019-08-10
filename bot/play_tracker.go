@@ -57,6 +57,14 @@ func TrackAllRecentPlays(bot *eb.Bot, minAcc float64) {
 		v.User.MSDJackSpeed = util.TruncateFloat(latestUser.JackSpeed, 2)
 		v.User.MSDChordjack = util.TruncateFloat(latestUser.Chordjack, 2)
 		v.User.MSDTechnical = util.TruncateFloat(latestUser.Technical, 2)
+		v.User.RankOverall = latestUser.Rank.Overall
+		v.User.RankStream = latestUser.Rank.Stream
+		v.User.RankJumpstream = latestUser.Rank.Jumpstream
+		v.User.RankHandstream = latestUser.Rank.Handstream
+		v.User.RankStamina = latestUser.Rank.Stamina
+		v.User.RankJackSpeed = latestUser.Rank.JackSpeed
+		v.User.RankChordjack = latestUser.Rank.Chordjack
+		v.User.RankTechnical = latestUser.Rank.Technical
 		v.User.LastRecentScoreKey.String = s.Key
 		v.User.LastRecentScoreKey.Valid = true
 

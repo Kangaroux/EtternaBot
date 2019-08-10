@@ -34,6 +34,17 @@ type MSD struct {
 	Technical  float64
 }
 
+type Rank struct {
+	Overall    int
+	Stream     int
+	Jumpstream int
+	Handstream int
+	Stamina    int
+	JackSpeed  int
+	Chordjack  int
+	Technical  int
+}
+
 type Song struct {
 	ID            int
 	Name          string
@@ -65,4 +76,5 @@ type User struct {
 	Username    string
 
 	MSD
+	Rank Rank
 }

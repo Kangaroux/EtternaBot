@@ -105,6 +105,14 @@ func (s EtternaUserService) GetRegisteredUsersForRecentPlays() ([]*model.Registe
 			u.msd_jackspeed         "u.msd_jackspeed",
 			u.msd_chordjack         "u.msd_chordjack",
 			u.msd_technical         "u.msd_technical",
+			u.rank_overall          "u.rank_overall",
+			u.rank_stream           "u.rank_stream",
+			u.rank_jumpstream       "u.rank_jumpstream",
+			u.rank_handstream       "u.rank_handstream",
+			u.rank_stamina          "u.rank_stamina",
+			u.rank_jackspeed        "u.rank_jackspeed",
+			u.rank_chordjack        "u.rank_chordjack",
+			u.rank_technical        "u.rank_technical",
 			s.id                    "s.id",
 			s.created_at            "s.created_at",
 			s.updated_at            "s.updated_at",
@@ -168,9 +176,17 @@ func (s EtternaUserService) Save(user *model.EtternaUser) error {
 			msd_stamina,
 			msd_jackspeed,
 			msd_chordjack,
-			msd_technical
+			msd_technical,
+			rank_overall,
+			rank_stream,
+			rank_jumpstream,
+			rank_handstream,
+			rank_stamina,
+			rank_jackspeed,
+			rank_chordjack,
+			rank_technical
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
 		RETURNING id`
 
 		err = s.db.Get(&user.ID, q,
@@ -188,6 +204,14 @@ func (s EtternaUserService) Save(user *model.EtternaUser) error {
 			user.MSDJackSpeed,
 			user.MSDChordjack,
 			user.MSDTechnical,
+			user.RankOverall,
+			user.RankStream,
+			user.RankJumpstream,
+			user.RankHandstream,
+			user.RankStamina,
+			user.RankJackSpeed,
+			user.RankChordjack,
+			user.RankTechnical,
 		)
 	} else {
 		q := `UPDATE "etterna_users" SET
@@ -201,7 +225,15 @@ func (s EtternaUserService) Save(user *model.EtternaUser) error {
 			msd_stamina=$9,
 			msd_jackspeed=$10,
 			msd_chordjack=$11,
-			msd_technical=$12
+			msd_technical=$12,
+			rank_overall=$13,
+			rank_stream=$14,
+			rank_jumpstream=$15,
+			rank_handstream=$16,
+			rank_stamina=$17,
+			rank_jackspeed=$18,
+			rank_chordjack=$19,
+			rank_technical=$20
 		WHERE lower(username)=lower($1)`
 
 		_, err = s.db.Exec(q,
@@ -217,6 +249,14 @@ func (s EtternaUserService) Save(user *model.EtternaUser) error {
 			user.MSDJackSpeed,
 			user.MSDChordjack,
 			user.MSDTechnical,
+			user.RankOverall,
+			user.RankStream,
+			user.RankJumpstream,
+			user.RankHandstream,
+			user.RankStamina,
+			user.RankJackSpeed,
+			user.RankChordjack,
+			user.RankTechnical,
 		)
 	}
 

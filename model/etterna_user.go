@@ -40,6 +40,14 @@ type EtternaUser struct {
 	MSDJackSpeed       float64        `db:"msd_jackspeed"`
 	MSDChordjack       float64        `db:"msd_chordjack"`
 	MSDTechnical       float64        `db:"msd_technical"`
+	RankOverall        int            `db:"rank_overall"`
+	RankStream         int            `db:"rank_stream"`
+	RankJumpstream     int            `db:"rank_jumpstream"`
+	RankHandstream     int            `db:"rank_handstream"`
+	RankStamina        int            `db:"rank_stamina"`
+	RankJackSpeed      int            `db:"rank_jackspeed"`
+	RankChordjack      int            `db:"rank_chordjack"`
+	RankTechnical      int            `db:"rank_technical"`
 }
 
 type RegisteredUserServers struct {

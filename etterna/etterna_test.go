@@ -199,7 +199,7 @@ func TestGetScores(t *testing.T) {
 		api := New("testkey")
 		api.baseURL = server.URL
 
-		api.GetScores(userID, uint(length), uint(start), sortColumn, sortAsc)
+		api.GetScores(userID, "", uint(length), uint(start), sortColumn, sortAsc)
 
 		select {
 		case <-ok:
@@ -218,7 +218,7 @@ func TestGetScores(t *testing.T) {
 		api := New("testkey")
 		api.baseURL = server.URL
 
-		_, err := api.GetScores(123, 25, 0, SortAccuracy, true)
+		_, err := api.GetScores(123, "", 25, 0, SortAccuracy, true)
 
 		require.Error(t, err)
 		require.Equal(t, ErrNotFound, err.(*Error).Code)
@@ -235,7 +235,7 @@ func TestGetScores(t *testing.T) {
 		api.baseURL = server.URL
 
 		// Stubbed data so the args don't matter
-		scores, err := api.GetScores(0, 0, 0, 0, false)
+		scores, err := api.GetScores(0, "", 0, 0, 0, false)
 
 		require.NoError(t, err)
 		require.Equal(t, 5, len(scores))

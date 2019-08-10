@@ -7,6 +7,7 @@ import (
 	eb "github.com/Kangaroux/etternabot"
 	"github.com/Kangaroux/etternabot/etterna"
 	"github.com/Kangaroux/etternabot/model"
+	"github.com/Kangaroux/etternabot/util"
 	"github.com/bwmarrin/discordgo"
 )
 
@@ -348,28 +349,28 @@ func CmdVersus(bot *eb.Bot, m *discordgo.MessageCreate, args []string) {
 	var description string
 
 	description += fmt.Sprintf("   Overall:  %5.2f  %c  %5.2f  (%+.2f)\n", user1.MSDOverall,
-		getEqualitySign(user1.MSDOverall, user2.MSDOverall), user2.MSDOverall, user1.MSDOverall-user2.MSDOverall)
+		util.GetEqualitySign(user1.MSDOverall, user2.MSDOverall), user2.MSDOverall, user1.MSDOverall-user2.MSDOverall)
 
 	description += fmt.Sprintf("    Stream:  %5.2f  %c  %5.2f  (%+.2f)\n", user1.MSDStream,
-		getEqualitySign(user1.MSDStream, user2.MSDStream), user2.MSDStream, user1.MSDStream-user2.MSDStream)
+		util.GetEqualitySign(user1.MSDStream, user2.MSDStream), user2.MSDStream, user1.MSDStream-user2.MSDStream)
 
 	description += fmt.Sprintf("Jumpstream:  %5.2f  %c  %5.2f  (%+.2f)\n", user1.MSDJumpstream,
-		getEqualitySign(user1.MSDJumpstream, user2.MSDJumpstream), user2.MSDJumpstream, user1.MSDJumpstream-user2.MSDJumpstream)
+		util.GetEqualitySign(user1.MSDJumpstream, user2.MSDJumpstream), user2.MSDJumpstream, user1.MSDJumpstream-user2.MSDJumpstream)
 
 	description += fmt.Sprintf("Handstream:  %5.2f  %c  %5.2f  (%+.2f)\n", user1.MSDHandstream,
-		getEqualitySign(user1.MSDHandstream, user2.MSDHandstream), user2.MSDHandstream, user1.MSDHandstream-user2.MSDHandstream)
+		util.GetEqualitySign(user1.MSDHandstream, user2.MSDHandstream), user2.MSDHandstream, user1.MSDHandstream-user2.MSDHandstream)
 
 	description += fmt.Sprintf("   Stamina:  %5.2f  %c  %5.2f  (%+.2f)\n", user1.MSDStamina,
-		getEqualitySign(user1.MSDStamina, user2.MSDStamina), user2.MSDStamina, user1.MSDStamina-user2.MSDStamina)
+		util.GetEqualitySign(user1.MSDStamina, user2.MSDStamina), user2.MSDStamina, user1.MSDStamina-user2.MSDStamina)
 
 	description += fmt.Sprintf(" JackSpeed:  %5.2f  %c  %5.2f  (%+.2f)\n", user1.MSDJackSpeed,
-		getEqualitySign(user1.MSDJackSpeed, user2.MSDJackSpeed), user2.MSDJackSpeed, user1.MSDJackSpeed-user2.MSDJackSpeed)
+		util.GetEqualitySign(user1.MSDJackSpeed, user2.MSDJackSpeed), user2.MSDJackSpeed, user1.MSDJackSpeed-user2.MSDJackSpeed)
 
 	description += fmt.Sprintf(" Chordjack:  %5.2f  %c  %5.2f  (%+.2f)\n", user1.MSDChordjack,
-		getEqualitySign(user1.MSDChordjack, user2.MSDChordjack), user2.MSDChordjack, user1.MSDChordjack-user2.MSDChordjack)
+		util.GetEqualitySign(user1.MSDChordjack, user2.MSDChordjack), user2.MSDChordjack, user1.MSDChordjack-user2.MSDChordjack)
 
 	description += fmt.Sprintf(" Technical:  %5.2f  %c  %5.2f  (%+.2f)\n", user1.MSDTechnical,
-		getEqualitySign(user1.MSDTechnical, user2.MSDTechnical), user2.MSDTechnical, user1.MSDTechnical-user2.MSDTechnical)
+		util.GetEqualitySign(user1.MSDTechnical, user2.MSDTechnical), user2.MSDTechnical, user1.MSDTechnical-user2.MSDTechnical)
 
 	embed := &discordgo.MessageEmbed{
 		Description: "```\n" + description + "\n```",
@@ -384,14 +385,4 @@ func CmdVersus(bot *eb.Bot, m *discordgo.MessageCreate, args []string) {
 	}
 
 	bot.Session.ChannelMessageSendEmbed(m.ChannelID, embed)
-}
-
-func getEqualitySign(a, b float64) rune {
-	if a > b {
-		return '>'
-	} else if a < b {
-		return '<'
-	} else {
-		return '='
-	}
 }

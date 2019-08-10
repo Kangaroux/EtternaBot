@@ -5,6 +5,7 @@ import (
 
 	eb "github.com/Kangaroux/etternabot"
 	"github.com/Kangaroux/etternabot/etterna"
+	"github.com/Kangaroux/etternabot/model"
 	"github.com/Kangaroux/etternabot/util"
 )
 
@@ -12,6 +13,7 @@ import (
 // if there was a new recent play, prints the play in the scores channel of
 // all servers that user is registered in
 func TrackAllRecentPlays(bot *eb.Bot, minAcc float64) {
+	serversToUpdate := make(map[uint]model.DiscordServer)
 	users, err := bot.Users.GetRegisteredUsersForRecentPlays()
 
 	if err != nil {
@@ -121,6 +123,16 @@ func TrackAllRecentPlays(bot *eb.Bot, minAcc float64) {
 			}
 
 			bot.Session.ChannelMessageSendEmbed(server.ScoreChannelID.String, embed)
+
+			server.LastSongID.Int64 = int64(s.Song.ID)
+			server.LastSongID.Valid = true
+
+			serversToUpdate[server.ID] = server
 		}
+	}
+
+	// Update all of the servers that we set the LastSongID field on
+	for _, s := range serversToUpdate {
+		bot.Servers.Save(&s)
 	}
 }

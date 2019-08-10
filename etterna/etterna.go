@@ -87,7 +87,7 @@ type scoreDetailPayload struct {
 type APIInterface interface {
 	GetByUsername(username string) (*User, error)
 	GetUserID(username string) (int, error)
-	GetScores(userID int, n uint, start uint, sortColumn string, sortAsc bool) ([]Score, error)
+	GetScores(userID int, search string, n uint, start uint, sortColumn string, sortAsc bool) ([]Score, error)
 }
 
 // New returns a ready-to-use instance of the etterna API
@@ -236,7 +236,7 @@ func (api *EtternaAPI) GetUserID(username string) (int, error) {
 }
 
 // GetScores returns a list of valid scores for a given user.
-func (api *EtternaAPI) GetScores(userID int, n uint, start uint, sortColumn SortColumn, sortAsc bool) ([]Score, error) {
+func (api *EtternaAPI) GetScores(userID int, search string, n uint, start uint, sortColumn SortColumn, sortAsc bool) ([]Score, error) {
 	var payload struct {
 		Data []scorePayload
 	}
@@ -255,6 +255,10 @@ func (api *EtternaAPI) GetScores(userID int, n uint, start uint, sortColumn Sort
 	form.Set("userid", strconv.Itoa(userID))
 	form.Set("order[0][column]", strconv.Itoa(int(sortColumn)))
 	form.Set("order[0][dir]", sortStr)
+
+	if search != "" {
+		form.Set("search[value]", search)
+	}
 
 	resp, err := http.PostForm(api.baseURL+"/score/userScores", form)
 

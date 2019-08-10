@@ -44,7 +44,7 @@ func (s DiscordServerService) Save(server *model.DiscordServer) error {
 			command_prefix,
 			server_id,
 			score_channel_id,
-			last_score_key
+			last_song_id
 		)
 		VALUES ($1, $2, $3, $4, $5, $6)
 		RETURNING id`
@@ -55,22 +55,22 @@ func (s DiscordServerService) Save(server *model.DiscordServer) error {
 			server.CommandPrefix,
 			server.ServerID,
 			server.ScoreChannelID,
-			server.LastScoreKey,
+			server.LastSongID,
 		)
 	} else {
 		q := `UPDATE "discord_servers" SET
 			updated_at=$2,
 			command_prefix=$3,
-			score_channel_id=$4
-			last_score_key=$5
-		WHERE server_id=$1`
+			score_channel_id=$4,
+			last_song_id=$5
+		WHERE id=$1`
 
 		_, err = s.db.Exec(q,
-			server.ServerID,
+			server.ID,
 			server.UpdatedAt,
 			server.CommandPrefix,
 			server.ScoreChannelID,
-			server.LastScoreKey,
+			server.LastSongID,
 		)
 	}
 

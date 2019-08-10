@@ -96,12 +96,14 @@ func messageCreate(bot *eb.Bot, m *discordgo.MessageCreate) {
 	}
 
 	switch cmdParts[0] {
+	case "compare":
+		CmdCompare(bot, server, m, cmdParts)
 	case "help":
 		CmdHelp(bot, server, m)
 	case "profile":
 		CmdProfile(bot, m, cmdParts)
 	case "recent":
-		CmdRecentPlay(bot, m, cmdParts)
+		CmdRecentPlay(bot, server, m, cmdParts)
 	case "setuser":
 		CmdSetUser(bot, m, cmdParts)
 	case "unset":

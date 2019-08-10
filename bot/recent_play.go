@@ -16,7 +16,7 @@ const (
 
 // getRecentPlay looks up the most recent, valid play for a user.
 func getRecentPlay(bot *eb.Bot, etternaID int) (*etterna.Score, error) {
-	scores, err := bot.API.GetScores(etternaID, recentPlayLookupCount, 0, etterna.SortDate, false)
+	scores, err := bot.API.GetScores(etternaID, "", recentPlayLookupCount, 0, etterna.SortDate, false)
 
 	if err != nil {
 		fmt.Println("Failed to look up recent scores", err)
@@ -84,6 +84,10 @@ func getPlaySummaryAsDiscordEmbed(bot *eb.Bot, score *etterna.Score, user *model
 		score.Bad,
 		score.Miss,
 		score.MaxCombo)
+
+	if score.MinesHit > 0 {
+		description += fmt.Sprintf("\n➤ **Mines hit:** %d <:LULW:458394552886099972>", score.MinesHit)
+	}
 
 	msg := &discordgo.MessageEmbed{
 		URL: scoreURL,

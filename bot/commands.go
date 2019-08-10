@@ -5,9 +5,89 @@ import (
 	"strings"
 
 	eb "github.com/Kangaroux/etternabot"
+	"github.com/Kangaroux/etternabot/etterna"
 	"github.com/Kangaroux/etternabot/model"
 	"github.com/bwmarrin/discordgo"
 )
+
+// CmdCompare gets the user's best score for the last song posted in the server
+func CmdCompare(bot *eb.Bot, server *model.DiscordServer, m *discordgo.MessageCreate, args []string) {
+	var err error
+	var user *model.EtternaUser
+
+	if !server.LastSongID.Valid {
+		bot.Session.ChannelMessageSend(m.ChannelID, "No scores to compare to.")
+		return
+	}
+
+	if len(args) == 1 {
+		user, err = bot.Users.GetRegisteredUser(m.GuildID, m.Author.ID)
+	} else {
+		user, err = getUserOrCreate(bot, args[1], false)
+	}
+
+	if err != nil {
+		bot.Session.ChannelMessageSend(m.ChannelID, err.Error())
+		return
+	} else if user == nil {
+		bot.Session.ChannelMessageSend(m.ChannelID, "You are not registered with an Etterna user. "+
+			"Please register using the `setuser` command, or specify a user: recent <username>")
+		return
+	}
+
+	song, err := getSongOrCreate(bot, int(server.LastSongID.Int64))
+
+	if err != nil {
+		bot.Session.ChannelMessageSend(m.ChannelID, err.Error())
+		return
+	}
+
+	// Get the top nerf score for this song by this user
+	scores, err := bot.API.GetScores(user.EtternaID, song.Name, 50, 0, etterna.SortNerf, false)
+
+	if err != nil {
+		bot.Session.ChannelMessageSend(m.ChannelID, err.Error())
+		return
+	}
+
+	var score *etterna.Score
+
+	// Find the first matching score
+	for i, s := range scores {
+		if s.Song.ID == int(server.LastSongID.Int64) {
+			score = &scores[i]
+			break
+		}
+	}
+
+	if len(scores) == 0 || score == nil {
+		bot.Session.ChannelMessageSend(m.ChannelID, fmt.Sprintf("%s has no scores on '%s'", user.Username, song.Name))
+		return
+	}
+
+	details, err := bot.API.GetScoreDetail(score.Key)
+
+	if err != nil {
+		bot.Session.ChannelMessageSend(m.ChannelID, err.Error())
+		return
+	}
+
+	score.MaxCombo = details.MaxCombo
+	score.Valid = details.Valid
+	score.Date = details.Date
+	score.Mods = details.Mods
+	score.MinesHit = details.MinesHit
+
+	embed, err := getPlaySummaryAsDiscordEmbed(bot, score, user)
+	embed.Author.Name = "Played by " + user.Username
+
+	if err != nil {
+		bot.Session.ChannelMessageSend(m.ChannelID, err.Error())
+		return
+	}
+
+	bot.Session.ChannelMessageSendEmbed(m.ChannelID, embed)
+}
 
 // CmdHelp prints some help text for the user
 func CmdHelp(bot *eb.Bot, server *model.DiscordServer, m *discordgo.MessageCreate) {
@@ -17,6 +97,8 @@ func CmdHelp(bot *eb.Bot, server *model.DiscordServer, m *discordgo.MessageCreat
 		"I'm a bot for tracking Etterna plays. https://etternaonline.com\n\n"+
 			"For commands, use this prefix: `"+p+"`\n\n"+
 			"Command list:\n\n"+
+			"**compare [username]**\n"+
+			"\tGets a summary of your best play, or the play of the player you provide, for the last song posted in the server.\n\n"+
 			"**help**\n"+
 			"\tShows this help text. Cool.\n\n"+
 			"**profile**\n"+
@@ -47,6 +129,7 @@ func CmdProfile(bot *eb.Bot, m *discordgo.MessageCreate, args []string) {
 	} else if user == nil {
 		bot.Session.ChannelMessageSend(m.ChannelID, "You are not registered with an Etterna user. "+
 			"Please register using the `setuser` command, or specify a user: recent <username>")
+		return
 	}
 
 	var description string
@@ -81,7 +164,7 @@ func CmdProfile(bot *eb.Bot, m *discordgo.MessageCreate, args []string) {
 }
 
 // CmdRecentPlay gets a user's most recent valid play and prints it in the discord channel
-func CmdRecentPlay(bot *eb.Bot, m *discordgo.MessageCreate, args []string) {
+func CmdRecentPlay(bot *eb.Bot, server *model.DiscordServer, m *discordgo.MessageCreate, args []string) {
 	var err error
 	var user *model.EtternaUser
 
@@ -114,6 +197,11 @@ func CmdRecentPlay(bot *eb.Bot, m *discordgo.MessageCreate, args []string) {
 	}
 
 	bot.Session.ChannelMessageSendEmbed(m.ChannelID, embed)
+
+	server.LastSongID.Int64 = int64(score.Song.ID)
+	server.LastSongID.Valid = true
+
+	bot.Servers.Save(server)
 }
 
 // CmdSetScoresChannel sets which discord channel the bot should post scores in

@@ -12,5 +12,5 @@ type DiscordServer struct {
 	CommandPrefix  string         `db:"command_prefix"`   // Prefix for using bot commands
 	ServerID       string         `db:"server_id"`        // Discord server ID
 	ScoreChannelID sql.NullString `db:"score_channel_id"` // The channel to post recent plays in
-	LastScoreKey   sql.NullString `db:"last_score_key"`   // The last score posted by the bot
+	LastSongID     sql.NullInt64  `db:"last_song_id"`     // The last song posted by the bot
 }

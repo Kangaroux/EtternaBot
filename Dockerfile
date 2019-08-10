@@ -18,4 +18,5 @@ COPY --from=0 /app/src/migrate_down.sh .
 COPY --from=0 /app/src/run.sh .
 COPY --from=0 /app/src/bin ./bin
 COPY --from=0 /app/src/migrations ./migrations
+RUN chmod +x run.sh
 ENTRYPOINT ["./run.sh"]

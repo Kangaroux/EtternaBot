@@ -118,8 +118,15 @@ func messageCreate(bot *eb.Bot, m *discordgo.MessageCreate) {
 }
 
 func ready(bot *eb.Bot, r *discordgo.Ready) {
-	bot.Session.UpdateStatus(0, ";help")
+	// Periodically set the bot status
+	go func() {
+		for {
+			bot.Session.UpdateStatus(0, ";help")
+			<-time.After(1 * time.Hour)
+		}
+	}()
 
+	// Periodically check for recent plays
 	go func() {
 		for {
 			TrackAllRecentPlays(bot, defaultRecentPlayMinAcc)

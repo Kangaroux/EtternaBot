@@ -92,26 +92,56 @@ func CmdCompare(bot *eb.Bot, server *model.DiscordServer, m *discordgo.MessageCr
 
 // CmdHelp prints some help text for the user
 func CmdHelp(bot *eb.Bot, server *model.DiscordServer, m *discordgo.MessageCreate) {
-	p := server.CommandPrefix
 
-	bot.Session.ChannelMessageSend(m.ChannelID,
-		"I'm a bot for tracking Etterna plays. https://etternaonline.com\n\n"+
-			"For commands, use this prefix: `"+p+"`\n\n"+
-			"Command list:\n\n"+
-			"**compare [username]**\n"+
-			"\tGets a summary of your best play, or the play of the player you provide, for the last song posted in the server.\n\n"+
-			"**help**\n"+
-			"\tShows this help text. Cool.\n\n"+
-			"**profile**\n"+
-			"\tGets a summary of your current ranks and ratings.\n\n"+
-			"**recent [username]**\n"+
-			"\tGets a summary of your latest play, or the play of the player you provide.\n\n"+
-			"**setuser <username>**\n"+
-			"\tLinks an etterna user to you. This will cause your recent plays to be tracked automatically.\n\n"+
-			"**unset**\n"+
-			"\tUnlinks you from any etterna users. Your recent plays will no longer be tracked.\n\n"+
-			"**vs <username> [username]**\n"+
-			"\tCompares two user's profiles. Uses your profile if you only give one username.")
+	prefix := server.CommandPrefix
+
+	embed := &discordgo.MessageEmbed{
+		Title:       "EtternaBot Help",
+		Description: "I'm a bot for tracking Etterna Online plays. https://etternaonline.com\nFor commands, use this prefix: `" + prefix + "`\n",
+
+		Fields: []*discordgo.MessageEmbedField{
+
+			&discordgo.MessageEmbedField{
+				Name:   "**help**",
+				Value:  "Shows this help text. Cool.",
+				Inline: false,
+			},
+
+			&discordgo.MessageEmbedField{
+				Name:   "**profile**",
+				Value:  "Gets a summary of your current ranks and ratings.",
+				Inline: false,
+			},
+
+			&discordgo.MessageEmbedField{
+				Name:   "**recent** [username]",
+				Value:  "Gets a summary of your latest play, or the play of whichever player you specify.",
+				Inline: false,
+			},
+
+			&discordgo.MessageEmbedField{
+				Name:   "**setuser** <username>",
+				Value:  "Links an Etterna Online user to you. This will cause your recent plays to be tracked automatically.",
+				Inline: false,
+			},
+
+			&discordgo.MessageEmbedField{
+				Name:   "**unset**",
+				Value:  "Unlinks you from any Etterna Online users. Your recent plays will no longer be tracked.",
+				Inline: false,
+			},
+
+			&discordgo.MessageEmbedField{
+				Name:   "**vs** <username> [username]",
+				Value:  "Compares two user's profiles. If you only specify one username, that user's profile will be compared to yours.",
+				Inline: false,
+			},
+		},
+
+		Color: embedColor,
+	}
+
+	bot.Session.ChannelMessageSendEmbed(m.ChannelID, embed)
 }
 
 func CmdProfile(bot *eb.Bot, m *discordgo.MessageCreate, args []string) {

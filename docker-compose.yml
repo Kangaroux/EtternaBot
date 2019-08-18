@@ -4,7 +4,7 @@ services:
     image: kangaroux/etternabot
     build:
       context: .
-    restart: always
+    restart: on-failure
     environment:
       - BOT_TOKEN
       - ETTERNA_API_KEY
@@ -22,7 +22,7 @@ services:
       - POSTGRES_USER=${POSTGRES_USER:-etterna}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
       - POSTGRES_DB=${POSTGRES_DB:-etterna}
-    restart: always
+    restart: on-failure
     volumes:
       - "dbdata:/var/lib/postgresql"
     networks:

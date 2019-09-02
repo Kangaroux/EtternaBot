@@ -63,9 +63,9 @@ func guildCreate(bot *eb.Bot, g *discordgo.GuildCreate) {
 		if err := bot.Servers.Save(server); err != nil {
 			fmt.Println("ERROR: Failed to insert guild into db", g.ID, g.Name, err)
 			return
-		} else {
-			fmt.Println("Created record for server", g.Name)
 		}
+
+		fmt.Println("Created record for server", g.Name)
 	}
 }
 

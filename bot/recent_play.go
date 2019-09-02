@@ -39,6 +39,7 @@ func getRecentPlay(bot *eb.Bot, etternaID int) (*etterna.Score, error) {
 	s.MaxCombo = details.MaxCombo
 	s.MinesHit = details.MinesHit
 	s.Mods = details.Mods
+	s.Date = details.Date
 
 	return &s, nil
 }

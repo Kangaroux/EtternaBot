@@ -24,10 +24,14 @@ func TrackAllRecentPlays(bot *eb.Bot, minAcc float64) {
 	for _, v := range users {
 		s, err := getRecentPlay(bot, v.User.EtternaID)
 
-		// Score isn't valid or we've already tracked this play
+		// Score isn't valid or we've already tracked this play. If you play the same song back-to-back
+		// EO will sometimes overwrite the old score we also need to track when the score was recorded
+		// so we know if it was overwritten or not
 		if err != nil ||
 			s == nil ||
-			v.User.LastRecentScoreKey.Valid && s.Key == v.User.LastRecentScoreKey.String {
+			(v.User.LastRecentScoreKey.Valid && s.Key == v.User.LastRecentScoreKey.String &&
+				v.User.LastRecentScoreDate != nil &&
+				s.Date.Equal(*v.User.LastRecentScoreDate)) {
 			continue
 		}
 
@@ -40,6 +44,15 @@ func TrackAllRecentPlays(bot *eb.Bot, minAcc float64) {
 			return
 		}
 
+		latestUser.Overall = util.TruncateFloat(latestUser.Overall, 2)
+		latestUser.Stream = util.TruncateFloat(latestUser.Stream, 2)
+		latestUser.Jumpstream = util.TruncateFloat(latestUser.Jumpstream, 2)
+		latestUser.Handstream = util.TruncateFloat(latestUser.Handstream, 2)
+		latestUser.Stamina = util.TruncateFloat(latestUser.Stamina, 2)
+		latestUser.JackSpeed = util.TruncateFloat(latestUser.JackSpeed, 2)
+		latestUser.Chordjack = util.TruncateFloat(latestUser.Chordjack, 2)
+		latestUser.Technical = util.TruncateFloat(latestUser.Technical, 2)
+
 		diffMSD := etterna.MSD{
 			Overall:    latestUser.Overall - v.User.MSDOverall,
 			Stream:     latestUser.Stream - v.User.MSDStream,
@@ -51,14 +64,14 @@ func TrackAllRecentPlays(bot *eb.Bot, minAcc float64) {
 			Technical:  latestUser.Technical - v.User.MSDTechnical,
 		}
 
-		v.User.MSDOverall = util.TruncateFloat(latestUser.Overall, 2)
-		v.User.MSDStream = util.TruncateFloat(latestUser.Stream, 2)
-		v.User.MSDJumpstream = util.TruncateFloat(latestUser.Jumpstream, 2)
-		v.User.MSDHandstream = util.TruncateFloat(latestUser.Handstream, 2)
-		v.User.MSDStamina = util.TruncateFloat(latestUser.Stamina, 2)
-		v.User.MSDJackSpeed = util.TruncateFloat(latestUser.JackSpeed, 2)
-		v.User.MSDChordjack = util.TruncateFloat(latestUser.Chordjack, 2)
-		v.User.MSDTechnical = util.TruncateFloat(latestUser.Technical, 2)
+		v.User.MSDOverall = latestUser.Overall
+		v.User.MSDStream = latestUser.Stream
+		v.User.MSDJumpstream = latestUser.Jumpstream
+		v.User.MSDHandstream = latestUser.Handstream
+		v.User.MSDStamina = latestUser.Stamina
+		v.User.MSDJackSpeed = latestUser.JackSpeed
+		v.User.MSDChordjack = latestUser.Chordjack
+		v.User.MSDTechnical = latestUser.Technical
 		v.User.RankOverall = latestUser.Rank.Overall
 		v.User.RankStream = latestUser.Rank.Stream
 		v.User.RankJumpstream = latestUser.Rank.Jumpstream
@@ -69,6 +82,7 @@ func TrackAllRecentPlays(bot *eb.Bot, minAcc float64) {
 		v.User.RankTechnical = latestUser.Rank.Technical
 		v.User.LastRecentScoreKey.String = s.Key
 		v.User.LastRecentScoreKey.Valid = true
+		v.User.LastRecentScoreDate = &s.Date
 
 		bot.Users.Save(&v.User)
 

@@ -144,6 +144,7 @@ func CmdHelp(bot *eb.Bot, server *model.DiscordServer, m *discordgo.MessageCreat
 	bot.Session.ChannelMessageSendEmbed(m.ChannelID, embed)
 }
 
+// CmdProfile displays a user's current rank and ratings
 func CmdProfile(bot *eb.Bot, m *discordgo.MessageCreate, args []string) {
 	var err error
 	var user *model.EtternaUser
@@ -247,7 +248,7 @@ func CmdSetScoresChannel(bot *eb.Bot, server *model.DiscordServer, m *discordgo.
 	}
 }
 
-// SetUser links a discord user with an etterna user. Only one discord user
+// CmdSetUser links a discord user with an etterna user. Only one discord user
 // can be linked to a given etterna user at a time in a server. Likewise, discord
 // users can only be linked to one etterna user at a time in a server.
 func CmdSetUser(bot *eb.Bot, m *discordgo.MessageCreate, args []string) {

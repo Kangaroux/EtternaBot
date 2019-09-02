@@ -1,6 +1,9 @@
 package model
 
-import "database/sql"
+import (
+	"database/sql"
+	"time"
+)
 
 type EtternaUserServicer interface {
 	// Gets the id of the discord user associated with the given etterna user in a given server
@@ -28,26 +31,27 @@ type EtternaUserServicer interface {
 
 type EtternaUser struct {
 	BaseModel
-	Username           string         `db:"username"`
-	EtternaID          int            `db:"etterna_id"`
-	Avatar             string         `db:"avatar"`
-	LastRecentScoreKey sql.NullString `db:"last_recent_score_key"`
-	MSDOverall         float64        `db:"msd_overall"`
-	MSDStream          float64        `db:"msd_stream"`
-	MSDJumpstream      float64        `db:"msd_jumpstream"`
-	MSDHandstream      float64        `db:"msd_handstream"`
-	MSDStamina         float64        `db:"msd_stamina"`
-	MSDJackSpeed       float64        `db:"msd_jackspeed"`
-	MSDChordjack       float64        `db:"msd_chordjack"`
-	MSDTechnical       float64        `db:"msd_technical"`
-	RankOverall        int            `db:"rank_overall"`
-	RankStream         int            `db:"rank_stream"`
-	RankJumpstream     int            `db:"rank_jumpstream"`
-	RankHandstream     int            `db:"rank_handstream"`
-	RankStamina        int            `db:"rank_stamina"`
-	RankJackSpeed      int            `db:"rank_jackspeed"`
-	RankChordjack      int            `db:"rank_chordjack"`
-	RankTechnical      int            `db:"rank_technical"`
+	Username            string         `db:"username"`
+	EtternaID           int            `db:"etterna_id"`
+	Avatar              string         `db:"avatar"`
+	LastRecentScoreKey  sql.NullString `db:"last_recent_score_key"`
+	LastRecentScoreDate *time.Time     `db:"last_recent_score_date"`
+	MSDOverall          float64        `db:"msd_overall"`
+	MSDStream           float64        `db:"msd_stream"`
+	MSDJumpstream       float64        `db:"msd_jumpstream"`
+	MSDHandstream       float64        `db:"msd_handstream"`
+	MSDStamina          float64        `db:"msd_stamina"`
+	MSDJackSpeed        float64        `db:"msd_jackspeed"`
+	MSDChordjack        float64        `db:"msd_chordjack"`
+	MSDTechnical        float64        `db:"msd_technical"`
+	RankOverall         int            `db:"rank_overall"`
+	RankStream          int            `db:"rank_stream"`
+	RankJumpstream      int            `db:"rank_jumpstream"`
+	RankHandstream      int            `db:"rank_handstream"`
+	RankStamina         int            `db:"rank_stamina"`
+	RankJackSpeed       int            `db:"rank_jackspeed"`
+	RankChordjack       int            `db:"rank_chordjack"`
+	RankTechnical       int            `db:"rank_technical"`
 }
 
 type RegisteredUserServers struct {

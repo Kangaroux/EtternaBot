@@ -36,6 +36,7 @@ func CmdCompare(bot *eb.Bot, server *model.DiscordServer, m *discordgo.MessageCr
 		return
 	}
 
+	bot.Session.ChannelTyping(m.ChannelID)
 	song, err := getSongOrCreate(bot, int(server.LastSongID.Int64))
 
 	if err != nil {
@@ -164,6 +165,11 @@ func CmdProfile(bot *eb.Bot, m *discordgo.MessageCreate, args []string) {
 		return
 	}
 
+	// The profile command should always show the latest info for the user, however we
+	// don't want to cache it since the nerf calc can cause these to change, and the recent
+	// plays shows what the calc adjusted
+	getLatestUserInfo(bot, user)
+
 	var description string
 
 	description += fmt.Sprintf("➤ **Overall:** %.2f (#%d)\n", user.MSDOverall, user.RankOverall)
@@ -215,6 +221,7 @@ func CmdRecentPlay(bot *eb.Bot, server *model.DiscordServer, m *discordgo.Messag
 		return
 	}
 
+	bot.Session.ChannelTyping(m.ChannelID)
 	score, err := getRecentPlay(bot, user.EtternaID)
 
 	if err != nil {

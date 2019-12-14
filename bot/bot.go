@@ -161,6 +161,8 @@ func handleScoreURLs(bot *eb.Bot, m *discordgo.MessageCreate) {
 		return
 	}
 
+	bot.Session.ChannelTyping(m.ChannelID)
+
 	key := match[1]
 	detail, err := bot.API.GetScoreDetail(key)
 

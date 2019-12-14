@@ -2,6 +2,7 @@ package bot
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -18,6 +19,11 @@ const (
 	defaultRecentPlayMinAcc = 99.0 // Minimum acc to display a recent play
 	embedColor              = 8519899
 	recentPlayInterval      = 2 * time.Minute // How often to check for recent plays
+)
+
+var (
+	reCommand  = regexp.MustCompile(`^[a-z0-9]+$`)
+	reScoreURL = regexp.MustCompile(`etternaonline\.com\/score\/view\/([a-zA-Z0-9]+)\b|$`)
 )
 
 // New returns a new discord bot instance that is ready to be started
@@ -85,13 +91,16 @@ func messageCreate(bot *eb.Bot, m *discordgo.MessageCreate) {
 		return
 	}
 
+	// Parse the message even if it doesn't look like a command
 	if !strings.HasPrefix(m.Message.Content, server.CommandPrefix) {
+		parseMessageNoCmd(bot, m)
 		return
 	}
 
 	cmdParts := strings.Split(m.Message.Content[len(server.CommandPrefix):], " ")
+	cmdParts[0] = strings.ToLower(cmdParts[0])
 
-	if cmdParts[0] == "" {
+	if cmdParts[0] == "" || !reCommand.MatchString(cmdParts[0]) {
 		return
 	}
 
@@ -133,4 +142,89 @@ func ready(bot *eb.Bot, r *discordgo.Ready) {
 			<-time.After(recentPlayInterval)
 		}
 	}()
+}
+
+func parseMessageNoCmd(bot *eb.Bot, m *discordgo.MessageCreate) {
+	handleScoreURLs(bot, m)
+}
+
+func handleScoreURLs(bot *eb.Bot, m *discordgo.MessageCreate) {
+	match := reScoreURL.FindStringSubmatch(m.Message.Content)
+
+	if match == nil {
+		return
+	}
+
+	key := match[1]
+	detail, err := bot.API.GetScoreDetail(key)
+
+	if err != nil {
+		bot.Session.ChannelMessageSend(
+			m.ChannelID,
+			fmt.Sprintf("Could not find score for %s (%s)", key, err.Error()),
+		)
+		return
+	}
+
+	scores, err := bot.API.GetScores(detail.User.ID, detail.Song.Name, 100, 0, etterna.SortNerf, false)
+
+	if err != nil {
+		bot.Session.ChannelMessageSend(
+			m.ChannelID,
+			fmt.Sprintf("Could not find score for %s (%s)", key, err.Error()),
+		)
+		return
+	}
+
+	var score *etterna.Score
+
+	// Find the matching score and set the nerf rating
+	for _, s := range scores {
+		if s.Key == key[:41] {
+			detail.Nerfed = s.Nerfed
+			score = &s
+			break
+		}
+	}
+
+	if score == nil {
+		bot.Session.ChannelMessageSend(
+			m.ChannelID,
+			fmt.Sprintf("Could not find score for %s (could not be found)", key),
+		)
+		return
+	}
+
+	score.MaxCombo = detail.MaxCombo
+	score.MinesHit = detail.MinesHit
+	score.Mods = detail.Mods
+	score.Date = detail.Date
+	user, err := getUserOrCreate(bot, detail.User.Username, false)
+
+	if err != nil {
+		bot.Session.ChannelMessageSend(
+			m.ChannelID,
+			fmt.Sprintf("Could not find user %s (%s)", detail.User.Username, err.Error()),
+		)
+		return
+	}
+
+	embed, err := getPlaySummaryAsDiscordEmbed(bot, score, user)
+
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	_, err = bot.Session.ChannelMessageSendEmbed(m.ChannelID, embed)
+
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	server, _ := bot.Servers.Get(m.GuildID)
+	server.LastSongID.Int64 = int64(score.Song.ID)
+	server.LastSongID.Valid = true
+	bot.Servers.Save(server)
 }

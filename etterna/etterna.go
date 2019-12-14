@@ -65,14 +65,17 @@ type scorePayload struct {
 
 // Payload received from the score detail endpoint
 type scoreDetailPayload struct {
-	Date      string `json:"datetime"`
-	MaxCombo  string
-	MinesHit  string `json:"hitmine"`
-	Modifiers string
-	Rate      string `json:"user_chart_rate_rate"`
-	ScoreKey  string
-	Valid     string
-	WifeScore string
+	Date        string `json:"datetime"`
+	MaxCombo    string
+	MinesHit    string `json:"hitmine"`
+	Modifiers   string
+	Rate        string `json:"user_chart_rate_rate"`
+	ScoreKey    string
+	Valid       string
+	WifeScore   string
+	Username    string
+	AvatarURL   string
+	CountryCode string
 
 	Overall    string
 	Stream     string
@@ -388,6 +391,16 @@ func (api *EtternaAPI) GetScoreDetail(scoreKey string) (*Score, error) {
 	score.Date, _ = time.Parse("2006-01-02 15:04:05", p.Date)
 	score.Mods = p.Modifiers
 	score.MinesHit, _ = strconv.Atoi(p.MinesHit)
+
+	// The user ID is embedded at the end of the score key
+	userID, _ := strconv.ParseInt(scoreKey[41:], 10, 32)
+
+	score.User = User{
+		ID:          int(userID),
+		AvatarURL:   p.AvatarURL,
+		CountryCode: p.CountryCode,
+		Username:    p.Username,
+	}
 
 	return &score, nil
 }

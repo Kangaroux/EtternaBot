@@ -64,6 +64,7 @@ type Score struct {
 	Valid    bool
 	MinesHit int
 	Song     Song
+	User     User
 
 	Judgements
 	MSD

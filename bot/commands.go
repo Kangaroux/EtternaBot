@@ -212,6 +212,7 @@ func CmdRecentPlay(bot *eb.Bot, server *model.DiscordServer, m *discordgo.Messag
 	} else if user == nil {
 		bot.Session.ChannelMessageSend(m.ChannelID, "You are not registered with an Etterna user. "+
 			"Please register using the `setuser` command, or specify a user: recent <username>")
+		return
 	}
 
 	score, err := getRecentPlay(bot, user.EtternaID)

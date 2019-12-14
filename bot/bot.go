@@ -23,7 +23,7 @@ const (
 
 var (
 	reCommand  = regexp.MustCompile(`^[a-z0-9]+$`)
-	reScoreURL = regexp.MustCompile(`etternaonline\.com\/score\/view\/([a-zA-Z0-9]+)\b|$`)
+	reScoreURL = regexp.MustCompile(`etternaonline\.com\/score\/view\/(S[a-f0-9]+)`)
 )
 
 // New returns a new discord bot instance that is ready to be started
@@ -153,6 +153,12 @@ func handleScoreURLs(bot *eb.Bot, m *discordgo.MessageCreate) {
 
 	if match == nil {
 		return
+	} else if len(match[1]) < 41 {
+		bot.Session.ChannelMessageSend(
+			m.ChannelID,
+			fmt.Sprintf("Score URL does not look correct (did you copy it right?)"),
+		)
+		return
 	}
 
 	key := match[1]
@@ -161,7 +167,7 @@ func handleScoreURLs(bot *eb.Bot, m *discordgo.MessageCreate) {
 	if err != nil {
 		bot.Session.ChannelMessageSend(
 			m.ChannelID,
-			fmt.Sprintf("Could not find score for %s (%s)", key, err.Error()),
+			fmt.Sprintf("Failed to get score (%s)", err.Error()),
 		)
 		return
 	}
@@ -171,18 +177,15 @@ func handleScoreURLs(bot *eb.Bot, m *discordgo.MessageCreate) {
 	if err != nil {
 		bot.Session.ChannelMessageSend(
 			m.ChannelID,
-			fmt.Sprintf("Could not find score for %s (%s)", key, err.Error()),
+			fmt.Sprintf("Failed to get score (%s)", err.Error()),
 		)
 		return
 	}
 
 	var score *etterna.Score
 
-	fmt.Println(detail.Song.Name)
-
 	// Find the matching score and set the nerf rating
 	for _, s := range scores {
-		fmt.Println(s.Song.Name, s.Key, key[:41])
 		if s.Key == key[:41] {
 			detail.Nerfed = s.Nerfed
 			score = &s
@@ -193,7 +196,7 @@ func handleScoreURLs(bot *eb.Bot, m *discordgo.MessageCreate) {
 	if score == nil {
 		bot.Session.ChannelMessageSend(
 			m.ChannelID,
-			fmt.Sprintf("Could not find score for %s (could not be found)", key),
+			fmt.Sprintf("Failed to get score (could not be found)"),
 		)
 		return
 	}

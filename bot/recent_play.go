@@ -12,6 +12,14 @@ import (
 
 const (
 	recentPlayLookupCount = 10
+
+	emoteAAAA = "<:AAAA:655488390141313024>"
+	emoteAAA  = "<:AAA:655483030789685265>"
+	emoteAA   = "<:AA:655488727187193856>"
+	emoteA    = "<:A:655488727212359710>"
+	emoteB    = "<:B:655488727434395688>"
+	emoteC    = "<:C:655488727258234880>"
+	emoteLULW = "<:LULW:458394552886099972>"
 )
 
 // getRecentPlay looks up the most recent, valid play for a user.
@@ -72,13 +80,30 @@ func getPlaySummaryAsDiscordEmbed(bot *eb.Bot, score *etterna.Score, user *model
 		accStr = fmt.Sprintf("%.2f%%", score.Accuracy)
 	}
 
+	var gradeEmote string
+
+	if score.Accuracy >= 99.97 {
+		gradeEmote = emoteAAAA
+	} else if score.Accuracy >= 99.75 {
+		gradeEmote = emoteAAA
+	} else if score.Accuracy >= 93.00 {
+		gradeEmote = emoteAA
+	} else if score.Accuracy >= 80.00 {
+		gradeEmote = emoteA
+	} else if score.Accuracy >= 70.00 {
+		gradeEmote = emoteB
+	} else if score.Accuracy >= 60.00 {
+		gradeEmote = emoteC
+	}
+
 	scoreURL := fmt.Sprintf(bot.API.BaseURL()+"/score/view/%s%d", score.Key, user.EtternaID)
 	description := fmt.Sprintf(
-		"**[%s (%sx)](%s)**\n\n"+
+		"**%s\u2000[%s (%sx)](%s)**\n\n"+
 			"➤ **Acc:** %s @ %sx\n"+
 			"➤ **Score:** %.2f | **Nerfed:** %.2f\n"+
 			"➤ **Hits:** %d/%d/%d/%d/%d/%d\n"+
 			"➤ **Max combo:** x%d",
+		gradeEmote,
 		score.Song.Name,
 		rateStr,
 		scoreURL,
@@ -95,7 +120,7 @@ func getPlaySummaryAsDiscordEmbed(bot *eb.Bot, score *etterna.Score, user *model
 		score.MaxCombo)
 
 	if score.MinesHit > 0 {
-		description += fmt.Sprintf("\n➤ **Mines hit:** %d <:LULW:458394552886099972>", score.MinesHit)
+		description += fmt.Sprintf("\n➤ **Mines hit:** %d %s", score.MinesHit, emoteLULW)
 	}
 
 	msg := &discordgo.MessageEmbed{

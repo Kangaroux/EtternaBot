@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Kangaroux/etternabot/util"
 	"github.com/Kangaroux/htmlquery"
 )
 
@@ -43,13 +44,13 @@ var (
 	reJudgement = regexp.MustCompile(`([a-zA-Z]+):\s+(\d+)`)
 )
 
-// Payload received from the userScores endpoint
+// Payload received from score list endpoint
 type scorePayload struct {
-	SongName  string
-	Rate      string      `json:"user_chart_rate_rate"`
+	Date      string      `json:"datetime"`
 	Nerf      interface{} // This is a float64 except when the score is invalid then it's a string ???
+	Rate      string      `json:"user_chart_rate_rate"`
 	ScoreKey  string
-	Date      string `json:"datetime"`
+	SongName  string
 	WifeScore string
 
 	Overall    string
@@ -62,7 +63,7 @@ type scorePayload struct {
 	Technical  string
 }
 
-// Payload received from the API score endpoint
+// Payload received from the score detail endpoint
 type scoreDetailPayload struct {
 	Date      string `json:"datetime"`
 	MaxCombo  string
@@ -372,6 +373,16 @@ func (api *EtternaAPI) GetScoreDetail(scoreKey string) (*Score, error) {
 	score.JackSpeed, _ = strconv.ParseFloat(p.JackSpeed, 64)
 	score.Chordjack, _ = strconv.ParseFloat(p.Chordjack, 64)
 	score.Technical, _ = strconv.ParseFloat(p.Technical, 64)
+
+	score.Overall = util.RoundToPrecision(score.Overall, 2)
+	score.Stream = util.RoundToPrecision(score.Stream, 2)
+	score.Jumpstream = util.RoundToPrecision(score.Jumpstream, 2)
+	score.Handstream = util.RoundToPrecision(score.Handstream, 2)
+	score.Stamina = util.RoundToPrecision(score.Stamina, 2)
+	score.JackSpeed = util.RoundToPrecision(score.JackSpeed, 2)
+	score.Chordjack = util.RoundToPrecision(score.Chordjack, 2)
+	score.Technical = util.RoundToPrecision(score.Technical, 2)
+
 	score.MaxCombo, _ = strconv.Atoi(p.MaxCombo)
 	score.Valid = p.Valid == "1"
 	score.Date, _ = time.Parse("2006-01-02 15:04:05", p.Date)
@@ -542,6 +553,15 @@ func parseScorePayload(payload scorePayload) (*Score, error) {
 	score.JackSpeed, _ = strconv.ParseFloat(payload.JackSpeed, 64)
 	score.Chordjack, _ = strconv.ParseFloat(payload.Chordjack, 64)
 	score.Technical, _ = strconv.ParseFloat(payload.Technical, 64)
+
+	score.Overall = util.RoundToPrecision(score.Overall, 2)
+	score.Stream = util.RoundToPrecision(score.Stream, 2)
+	score.Jumpstream = util.RoundToPrecision(score.Jumpstream, 2)
+	score.Handstream = util.RoundToPrecision(score.Handstream, 2)
+	score.Stamina = util.RoundToPrecision(score.Stamina, 2)
+	score.JackSpeed = util.RoundToPrecision(score.JackSpeed, 2)
+	score.Chordjack = util.RoundToPrecision(score.Chordjack, 2)
+	score.Technical = util.RoundToPrecision(score.Technical, 2)
 
 	return &score, nil
 }

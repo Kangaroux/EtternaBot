@@ -178,8 +178,11 @@ func handleScoreURLs(bot *eb.Bot, m *discordgo.MessageCreate) {
 
 	var score *etterna.Score
 
+	fmt.Println(detail.Song.Name)
+
 	// Find the matching score and set the nerf rating
 	for _, s := range scores {
+		fmt.Println(s.Song.Name, s.Key, key[:41])
 		if s.Key == key[:41] {
 			detail.Nerfed = s.Nerfed
 			score = &s

@@ -64,17 +64,25 @@ func getPlaySummaryAsDiscordEmbed(bot *eb.Bot, score *etterna.Score, user *model
 		rateStr = rateStr[:length-1]
 	}
 
+	var accStr string
+
+	if score.Accuracy >= 99.75 {
+		accStr = fmt.Sprintf("%.4f%%", score.Accuracy)
+	} else {
+		accStr = fmt.Sprintf("%.2f%%", score.Accuracy)
+	}
+
 	scoreURL := fmt.Sprintf(bot.API.BaseURL()+"/score/view/%s%d", score.Key, user.EtternaID)
 	description := fmt.Sprintf(
 		"**[%s (%sx)](%s)**\n\n"+
-			"➤ **Acc:** %.2f%% @ %sx\n"+
+			"➤ **Acc:** %s @ %sx\n"+
 			"➤ **Score:** %.2f | **Nerfed:** %.2f\n"+
 			"➤ **Hits:** %d/%d/%d/%d/%d/%d\n"+
 			"➤ **Max combo:** x%d",
 		score.Song.Name,
 		rateStr,
 		scoreURL,
-		score.Accuracy,
+		accStr,
 		rateStr,
 		score.MSD.Overall,
 		score.Nerfed,

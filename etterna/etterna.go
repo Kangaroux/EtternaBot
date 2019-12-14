@@ -76,6 +76,7 @@ type scoreDetailPayload struct {
 	Username    string
 	AvatarURL   string
 	CountryCode string
+	SongID      string `json:"id"`
 
 	Overall    string
 	Stream     string
@@ -366,8 +367,20 @@ func (api *EtternaAPI) GetScoreDetail(scoreKey string) (*Score, error) {
 
 	p := payload[0]
 
+	songID, _ := strconv.ParseInt(p.SongID, 10, 32)
+	song, err := api.GetSong(int(songID))
+
+	if err != nil {
+		return nil, &Error{
+			Code:    ErrUnexpected,
+			Context: err,
+			Msg:     "Failed to retrieve song for score",
+		}
+	}
+
 	score := Score{}
 
+	score.Song = *song
 	score.Overall, _ = strconv.ParseFloat(p.Overall, 64)
 	score.Stream, _ = strconv.ParseFloat(p.Stream, 64)
 	score.Jumpstream, _ = strconv.ParseFloat(p.Jumpstream, 64)

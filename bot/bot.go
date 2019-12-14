@@ -224,6 +224,7 @@ func handleScoreURLs(bot *eb.Bot, m *discordgo.MessageCreate) {
 		return
 	}
 
+	embed.Author.Name = "Played by " + user.Username
 	_, err = bot.Session.ChannelMessageSendEmbed(m.ChannelID, embed)
 
 	if err != nil {

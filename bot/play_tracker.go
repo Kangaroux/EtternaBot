@@ -44,14 +44,14 @@ func TrackAllRecentPlays(bot *eb.Bot, minAcc float64) {
 			return
 		}
 
-		latestUser.Overall = util.TruncateFloat(latestUser.Overall, 2)
-		latestUser.Stream = util.TruncateFloat(latestUser.Stream, 2)
-		latestUser.Jumpstream = util.TruncateFloat(latestUser.Jumpstream, 2)
-		latestUser.Handstream = util.TruncateFloat(latestUser.Handstream, 2)
-		latestUser.Stamina = util.TruncateFloat(latestUser.Stamina, 2)
-		latestUser.JackSpeed = util.TruncateFloat(latestUser.JackSpeed, 2)
-		latestUser.Chordjack = util.TruncateFloat(latestUser.Chordjack, 2)
-		latestUser.Technical = util.TruncateFloat(latestUser.Technical, 2)
+		latestUser.Overall = util.RoundToPrecision(latestUser.Overall, 2)
+		latestUser.Stream = util.RoundToPrecision(latestUser.Stream, 2)
+		latestUser.Jumpstream = util.RoundToPrecision(latestUser.Jumpstream, 2)
+		latestUser.Handstream = util.RoundToPrecision(latestUser.Handstream, 2)
+		latestUser.Stamina = util.RoundToPrecision(latestUser.Stamina, 2)
+		latestUser.JackSpeed = util.RoundToPrecision(latestUser.JackSpeed, 2)
+		latestUser.Chordjack = util.RoundToPrecision(latestUser.Chordjack, 2)
+		latestUser.Technical = util.RoundToPrecision(latestUser.Technical, 2)
 
 		diffMSD := etterna.MSD{
 			Overall:    latestUser.Overall - v.User.MSDOverall,

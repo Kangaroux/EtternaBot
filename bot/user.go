@@ -69,14 +69,14 @@ func getLatestUserInfo(bot *eb.Bot, user *model.EtternaUser) error {
 	}
 
 	user.Avatar = etternaUser.AvatarURL
-	user.MSDOverall = util.TruncateFloat(etternaUser.Overall, 2)
-	user.MSDStream = util.TruncateFloat(etternaUser.Stream, 2)
-	user.MSDJumpstream = util.TruncateFloat(etternaUser.Jumpstream, 2)
-	user.MSDHandstream = util.TruncateFloat(etternaUser.Handstream, 2)
-	user.MSDStamina = util.TruncateFloat(etternaUser.Stamina, 2)
-	user.MSDJackSpeed = util.TruncateFloat(etternaUser.JackSpeed, 2)
-	user.MSDChordjack = util.TruncateFloat(etternaUser.Chordjack, 2)
-	user.MSDTechnical = util.TruncateFloat(etternaUser.Technical, 2)
+	user.MSDOverall = util.RoundToPrecision(etternaUser.Overall, 2)
+	user.MSDStream = util.RoundToPrecision(etternaUser.Stream, 2)
+	user.MSDJumpstream = util.RoundToPrecision(etternaUser.Jumpstream, 2)
+	user.MSDHandstream = util.RoundToPrecision(etternaUser.Handstream, 2)
+	user.MSDStamina = util.RoundToPrecision(etternaUser.Stamina, 2)
+	user.MSDJackSpeed = util.RoundToPrecision(etternaUser.JackSpeed, 2)
+	user.MSDChordjack = util.RoundToPrecision(etternaUser.Chordjack, 2)
+	user.MSDTechnical = util.RoundToPrecision(etternaUser.Technical, 2)
 	user.RankOverall = etternaUser.Rank.Overall
 	user.RankStream = etternaUser.Rank.Stream
 	user.RankJumpstream = etternaUser.Rank.Jumpstream

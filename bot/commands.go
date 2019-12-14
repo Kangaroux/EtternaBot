@@ -2,6 +2,8 @@ package bot
 
 import (
 	"fmt"
+	"regexp"
+	"strconv"
 	"strings"
 
 	eb "github.com/Kangaroux/etternabot"
@@ -9,6 +11,10 @@ import (
 	"github.com/Kangaroux/etternabot/model"
 	"github.com/Kangaroux/etternabot/util"
 	"github.com/bwmarrin/discordgo"
+)
+
+var (
+	reCompareRate = regexp.MustCompile(`compare@(\d*\.?\d*)`)
 )
 
 // CmdCompare gets the user's best score for the last song posted in the server
@@ -91,6 +97,131 @@ func CmdCompare(bot *eb.Bot, server *model.DiscordServer, m *discordgo.MessageCr
 	bot.Session.ChannelMessageSendEmbed(m.ChannelID, embed)
 }
 
+// CmdCompareRate gets the user's best score for the last song posted in the server
+// at a specific rate
+func CmdCompareRate(bot *eb.Bot, server *model.DiscordServer, m *discordgo.MessageCreate, args []string) {
+	var err error
+	var user *model.EtternaUser
+
+	match := reCompareRate.FindStringSubmatch(args[0])
+
+	fmt.Println(args)
+
+	if match == nil || len(match[1]) == 0 {
+		bot.Session.ChannelMessageSend(m.ChannelID, "Usage: compare@<rate> [user]")
+		return
+	}
+
+	rate, _ := strconv.ParseFloat(match[1], 64)
+
+	if rate < 0.7 || rate > 3.0 {
+		bot.Session.ChannelMessageSend(m.ChannelID, "Rate must be between 0.7 and 3.0.")
+		return
+	}
+
+	split := strings.Split(args[0], ".")
+
+	// Has a decimal part
+	if len(split) == 2 {
+		// Verify the decimal part is not longer than 2 digits and that if it is 2 digits the
+		// leading number is a 0 or a 5.
+		if len(split[1]) > 2 || (len(split[1]) == 2 && split[1][1] != '0' && split[1][1] != '5') {
+			bot.Session.ChannelMessageSend(m.ChannelID, "Rate must be in 0.05 increments.")
+			return
+		}
+	}
+
+	if !server.LastSongID.Valid {
+		bot.Session.ChannelMessageSend(m.ChannelID, "No scores to compare to.")
+		return
+	}
+
+	if len(args) == 1 {
+		user, err = bot.Users.GetRegisteredUser(m.GuildID, m.Author.ID)
+	} else {
+		user, err = getUserOrCreate(bot, args[1], false)
+	}
+
+	if err != nil {
+		bot.Session.ChannelMessageSend(m.ChannelID, err.Error())
+		return
+	} else if user == nil {
+		bot.Session.ChannelMessageSend(m.ChannelID, "You are not registered with an Etterna user. "+
+			"Please register using the `setuser` command, or specify a user: recent <username>")
+		return
+	}
+
+	bot.Session.ChannelTyping(m.ChannelID)
+	song, err := getSongOrCreate(bot, int(server.LastSongID.Int64))
+
+	if err != nil {
+		bot.Session.ChannelMessageSend(m.ChannelID, err.Error())
+		return
+	}
+
+	// Get the top nerf score for this song by this user
+	scores, err := bot.API.GetScores(user.EtternaID, song.Name, 100, 0, etterna.SortNerf, false)
+
+	if err != nil {
+		bot.Session.ChannelMessageSend(m.ChannelID, err.Error())
+		return
+	}
+
+	var score *etterna.Score
+	hasAnyScore := false
+
+	// Find the first matching score at this rate
+	for i, s := range scores {
+		if s.Song.ID == int(server.LastSongID.Int64) {
+			hasAnyScore = true
+
+			if s.Rate == rate {
+				score = &scores[i]
+				break
+			}
+		}
+	}
+
+	rateStr := fmt.Sprintf("%.2f", rate)
+	length := len(rateStr)
+
+	// Remove a trailing zero if it exists (0.80 -> 0.8, 1.00 -> 1.0)
+	if rateStr[length-1] == '0' {
+		rateStr = rateStr[:length-1]
+	}
+
+	if len(scores) == 0 || !hasAnyScore {
+		bot.Session.ChannelMessageSend(m.ChannelID, fmt.Sprintf("%s has no scores on '%s'", user.Username, song.Name))
+		return
+	} else if hasAnyScore && score == nil {
+		bot.Session.ChannelMessageSend(m.ChannelID, fmt.Sprintf("%s has no scores on '%s' at %s", user.Username, song.Name, rateStr))
+		return
+	}
+
+	details, err := bot.API.GetScoreDetail(score.Key)
+
+	if err != nil {
+		bot.Session.ChannelMessageSend(m.ChannelID, err.Error())
+		return
+	}
+
+	score.MaxCombo = details.MaxCombo
+	score.Valid = details.Valid
+	score.Date = details.Date
+	score.Mods = details.Mods
+	score.MinesHit = details.MinesHit
+
+	embed, err := getPlaySummaryAsDiscordEmbed(bot, score, user)
+	embed.Author.Name = "Played by " + user.Username
+
+	if err != nil {
+		bot.Session.ChannelMessageSend(m.ChannelID, err.Error())
+		return
+	}
+
+	bot.Session.ChannelMessageSendEmbed(m.ChannelID, embed)
+}
+
 // CmdHelp prints some help text for the user
 func CmdHelp(bot *eb.Bot, server *model.DiscordServer, m *discordgo.MessageCreate) {
 
@@ -110,18 +241,6 @@ func CmdHelp(bot *eb.Bot, server *model.DiscordServer, m *discordgo.MessageCreat
 			},
 
 			&discordgo.MessageEmbedField{
-				Name:   "**profile**",
-				Value:  "Gets a summary of your current ranks and ratings.",
-				Inline: false,
-			},
-
-			&discordgo.MessageEmbedField{
-				Name:   "**recent** [username]",
-				Value:  "Gets a summary of your latest play, or the play of whichever player you specify.",
-				Inline: false,
-			},
-
-			&discordgo.MessageEmbedField{
 				Name:   "**setuser** <username>",
 				Value:  "Links an Etterna Online user to you. This will cause your recent plays to be tracked automatically.",
 				Inline: false,
@@ -130,6 +249,30 @@ func CmdHelp(bot *eb.Bot, server *model.DiscordServer, m *discordgo.MessageCreat
 			&discordgo.MessageEmbedField{
 				Name:   "**unset**",
 				Value:  "Unlinks you from any Etterna Online users. Your recent plays will no longer be tracked.",
+				Inline: false,
+			},
+
+			&discordgo.MessageEmbedField{
+				Name:   "**compare** [username]",
+				Value:  "Compares you or someone else's best score on the last posted song.",
+				Inline: false,
+			},
+
+			&discordgo.MessageEmbedField{
+				Name:   "**compare**@<rate> [username]",
+				Value:  "Compares you or someone else's best score on the last posted song at a specific rate. The rate must be a number between 0.7 and 3.0, and it must be in 0.05 increments.",
+				Inline: false,
+			},
+
+			&discordgo.MessageEmbedField{
+				Name:   "**profile**",
+				Value:  "Gets a summary of your current ranks and ratings.",
+				Inline: false,
+			},
+
+			&discordgo.MessageEmbedField{
+				Name:   "**recent** [username]",
+				Value:  "Gets a summary of your latest play, or the play of whichever player you specify.",
 				Inline: false,
 			},
 

@@ -22,7 +22,7 @@ const (
 )
 
 var (
-	reCommand  = regexp.MustCompile(`^[a-z0-9]+$`)
+	reCommand  = regexp.MustCompile(`^[a-z\d\.@]+$`)
 	reScoreURL = regexp.MustCompile(`etternaonline\.com\/score\/view\/(S[a-f0-9]+)`)
 )
 
@@ -122,7 +122,11 @@ func messageCreate(bot *eb.Bot, m *discordgo.MessageCreate) {
 	case "here":
 		CmdSetScoresChannel(bot, server, m)
 	default:
-		bot.Session.ChannelMessageSend(m.ChannelID, fmt.Sprintf("Unrecognized command '%s'.", cmdParts[0]))
+		if strings.HasPrefix(cmdParts[0], "compare@") {
+			CmdCompareRate(bot, server, m, cmdParts)
+		} else {
+			bot.Session.ChannelMessageSend(m.ChannelID, fmt.Sprintf("Unrecognized command '%s'.", cmdParts[0]))
+		}
 	}
 }
 

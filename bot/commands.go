@@ -97,8 +97,9 @@ func CmdHelp(bot *eb.Bot, server *model.DiscordServer, m *discordgo.MessageCreat
 	prefix := server.CommandPrefix
 
 	embed := &discordgo.MessageEmbed{
-		Title:       "EtternaBot Help",
-		Description: "I'm a bot for tracking Etterna Online plays. https://etternaonline.com\nFor commands, use this prefix: `" + prefix + "`\n",
+		Title: "EtternaBot Help",
+		Description: "I'm a bot for tracking Etterna Online plays. https://etternaonline.com\nFor commands, " +
+			"use this prefix: `" + prefix + "`\n\nI can also post score summaries if you send a link to a score.",
 
 		Fields: []*discordgo.MessageEmbedField{
 

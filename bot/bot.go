@@ -16,7 +16,7 @@ import (
 
 const (
 	defaultPrefix           = ";"  // Prefix for commands
-	defaultRecentPlayMinAcc = 99.0 // Minimum acc to display a recent play
+	defaultRecentPlayMinAcc = 99.5 // Minimum acc to display a recent play
 	embedColor              = 8519899
 	recentPlayInterval      = 2 * time.Minute // How often to check for recent plays
 )

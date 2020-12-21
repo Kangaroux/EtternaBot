@@ -100,7 +100,7 @@ func getPlaySummaryAsDiscordEmbed(bot *eb.Bot, score *etterna.Score, user *model
 	description := fmt.Sprintf(
 		"**%s\u2000[%s (%sx)](%s)**\n\n"+
 			"➤ **Acc:** %s @ %sx\n"+
-			"➤ **Score:** %.2f | **Nerfed:** %.2f\n"+
+			"➤ **Score:** %.2f\n"+
 			"➤ **Hits:** %d/%d/%d/%d/%d/%d\n"+
 			"➤ **Max combo:** x%d",
 		gradeEmote,
@@ -110,7 +110,6 @@ func getPlaySummaryAsDiscordEmbed(bot *eb.Bot, score *etterna.Score, user *model
 		accStr,
 		rateStr,
 		score.MSD.Overall,
-		score.Nerfed,
 		score.Marvelous,
 		score.Perfect,
 		score.Great,

@@ -82,9 +82,9 @@ func getPlaySummaryAsDiscordEmbed(bot *eb.Bot, score *etterna.Score, user *model
 
 	var gradeEmote string
 
-	if score.Accuracy >= 99.97 {
+	if score.Accuracy >= 99.955 {
 		gradeEmote = emoteAAAA
-	} else if score.Accuracy >= 99.75 {
+	} else if score.Accuracy >= 99.70 {
 		gradeEmote = emoteAAA
 	} else if score.Accuracy >= 93.00 {
 		gradeEmote = emoteAA
